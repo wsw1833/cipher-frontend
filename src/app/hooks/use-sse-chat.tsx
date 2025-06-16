@@ -10,12 +10,25 @@ interface ChatMessage {
 }
 
 interface SSEData {
-  type: 'status' | 'message';
+  type: 'status' | 'message' | 'vote_detail' | 'analysis_response' | 'vote';
   data: {
-    status?: 'connected' | 'keep_alive';
+    status?:
+      | 'connected'
+      | 'keep_alive'
+      | 'waiting_for_analysis'
+      | 'voting'
+      | 'in_progress'
+      | 'skipped';
     message: string;
     speaker: string;
     phase: 'communication' | 'voting' | 'analysis';
+    agent?: string;
+    vote?: string;
+    reasoning?: string;
+    response?: string;
+    action?: string;
+    eliminated_agent?: string;
+    result?: string | null;
   };
   timestamp: string;
 }
@@ -86,16 +99,74 @@ export function useSSEChat() {
           }
 
           if (
-            parsed.type === 'message' &&
+            parsed.type === 'vote_detail' &&
+            parsed.data.agent &&
+            parsed.data.vote &&
+            parsed.data.reasoning
+          ) {
+            const newMessage: ChatMessage = {
+              id: crypto.randomUUID(),
+              messaging: `I vote ${parsed.data.vote} because ${parsed.data.reasoning}`,
+              botname: parsed.data.agent,
+              timestamp: parsed.timestamp,
+            };
+
+            setMessages((prev) => [...prev, newMessage].slice(-100)); // Keep last 100 messages
+          }
+
+          if (
+            parsed.type === 'analysis_response' &&
+            parsed.data.agent &&
+            parsed.data.response
+          ) {
+            const newMessage: ChatMessage = {
+              id: crypto.randomUUID(),
+              messaging: `${parsed.data.response}`,
+              botname: parsed.data.agent,
+              timestamp: parsed.timestamp,
+            };
+
+            setMessages((prev) => [...prev, newMessage].slice(-100)); // Keep last 100 messages
+          }
+
+          if (
+            parsed.type === 'vote' &&
+            parsed.data.action &&
+            parsed.data.eliminated_agent
+          ) {
+            const newMessage: ChatMessage = {
+              id: crypto.randomUUID(),
+              messaging:
+                parsed.data.eliminated_agent === null
+                  ? 'No elimination'
+                  : `Eliminated Agent: ${parsed.data.eliminated_agent}`,
+              botname: 'System',
+              timestamp: parsed.timestamp,
+            };
+
+            setMessages((prev) => [...prev, newMessage].slice(-100)); // Keep last 100 messages
+          }
+
+          if (
+            parsed.type === 'status' &&
+            parsed.data.phase === 'voting' &&
+            (parsed.data.status === 'skipped' ||
+              parsed.data.status === 'voting')
+          ) {
+            setGameStatus('voting');
+          }
+          if (
+            parsed.type === 'status' &&
+            parsed.data.phase === 'analysis' &&
+            parsed.data.status === 'waiting_for_analysis'
+          ) {
+            setGameStatus('analysis');
+          }
+          if (
+            parsed.type === 'status' &&
             parsed.data.phase === 'communication'
           ) {
             setGameStatus('communication');
-          }
-          if (parsed.type === 'message' && parsed.data.phase === 'voting') {
-            setGameStatus('voting');
-          }
-          if (parsed.type === 'message' && parsed.data.phase === 'analysis') {
-            setGameStatus('analysis');
           }
         } catch (error) {
           console.error('Error parsing SSE data:', error);

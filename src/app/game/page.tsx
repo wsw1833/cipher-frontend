@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
+import NextImage from 'next/image';
 import { SpriteBot } from '@/components/bot';
 import {
   AI_MOVE_DURATION_MAX,
@@ -19,9 +19,14 @@ import {
 import { useSSEChat } from '../hooks/use-sse-chat';
 import {
   checkGameState,
+  startAnalysis,
   StartGameRound,
   startVoting,
 } from '@/actions/game-phase';
+import beerMug from '@images/beer-mug.svg';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
 
 interface BotState {
   x: number;
@@ -35,6 +40,17 @@ interface BotState {
     action: 'moving' | 'paused';
     actionEndTime: number;
   };
+}
+
+interface GameData {
+  game_id: string;
+  status: string;
+  current_round: number;
+  current_phase: string;
+  remaining_agents: string[];
+  eliminated_agents: string[];
+  werewolf: string;
+  result: string | null;
 }
 
 interface CanvasDimensions {
@@ -118,8 +134,11 @@ const GamePage = () => {
     height: BASE_CANVAS_HEIGHT,
     scaleFactor: 1,
   });
+  const [userInput, setUserInput] = useState<string>('');
   const [finalResult, setFinalResult] = useState<string | null>(null);
-  const [gameRound, setGameRound] = useState(0);
+  const [gameState, setGameState] = useState<GameData | null>(null);
+  const [gameRound, setGameRound] = useState(1);
+  const router = useRouter();
 
   const {
     messages: chatMessages,
@@ -541,6 +560,38 @@ const GamePage = () => {
     }
   }, [chatMessages]);
 
+  const handleAnalysisSubmit = async (userInput: string) => {
+    const gameID = localStorage.getItem('gameID');
+    if (!gameID) return;
+
+    try {
+      await startAnalysis(gameID, userInput);
+      setUserInput('');
+      setGameStatus('voting');
+    } catch (error) {
+      console.log('Analysis error:', error);
+    }
+  };
+
+  useEffect(() => {
+    const updateGameState = async () => {
+      const gameID = localStorage.getItem('gameID');
+      if (!gameID) return;
+
+      try {
+        const data = await checkGameState(gameID);
+        setGameState(data);
+      } catch (error) {
+        console.error('Error updating game state:', error);
+      }
+    };
+
+    // Update game state when game status changes
+    if (sseConnected) {
+      updateGameState();
+    }
+  }, [sseConnected]);
+
   useEffect(() => {
     if (!sseConnected && connectionStatus !== 'connected') {
       return;
@@ -561,15 +612,16 @@ const GamePage = () => {
 
           case 'voting':
             await startVoting(gameID);
-            break;
-
-          case 'gameCheck':
             const data = await checkGameState(gameID);
+            setGameState(data);
             if (data && data.result !== null) {
               setFinalResult(data.result);
               terminateAllConnections();
-              // Navigate to post analysis page
-              setGameRound((prev) => prev + 1);
+              setGameRound(0);
+              router.push('/post-game');
+            } else {
+              setGameRound((prev) => prev + 1); // Increment round
+              setGameStatus('communication');
             }
             break;
 
@@ -597,8 +649,9 @@ const GamePage = () => {
         >
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-2">
             <div className="flex items-center gap-4">
-              <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
-                🏰 Medieval Town Simulator
+              <h1 className="flex flex-row text-2xl md:text-3xl font-bold gap-2 items-center">
+                <NextImage src={beerMug} alt="icon" className="w-10 h-10" />
+                CipherWolves
               </h1>
             </div>
             <div className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
@@ -660,7 +713,7 @@ const GamePage = () => {
         </div>
 
         {/* Chat Panel */}
-        <div className="w-full lg:w-96 bg-white rounded-xl shadow-xl p-6 flex flex-col">
+        <div className="w-full lg:w-120 bg-white rounded-xl shadow-xl p-6 flex flex-col">
           <div className="flex items-center gap-2 mb-4">
             <h3 className="text-xl font-bold text-gray-800">💬 Town Chat</h3>
             <div
@@ -684,7 +737,7 @@ const GamePage = () => {
           </div>
 
           <div className="flex-1 min-h-0">
-            <div className="h-80 lg:h-96 overflow-y-auto border border-gray-200 rounded-lg p-3 space-y-3 bg-gray-50">
+            <div className="h-80 lg:h-116 overflow-y-auto border border-gray-200 rounded-lg p-3 space-y-3 bg-gray-50">
               {chatMessages.length === 0 ? (
                 <div className="text-gray-500 text-center py-12">
                   <div className="text-4xl mb-2">🏰</div>
@@ -730,34 +783,48 @@ const GamePage = () => {
             </div>
           </div>
 
+          <div className="flex gap-4">
+            <Input
+              type="text"
+              value={userInput}
+              onChange={(e) => setUserInput(e.target.value)}
+              placeholder="Enter your analysis..."
+              disabled={gameStatus !== 'analysis'}
+            />
+            <Button
+              onClick={() => handleAnalysisSubmit(userInput)}
+              disabled={gameStatus !== 'analysis'}
+            >
+              Send
+            </Button>
+          </div>
+
           <div className="mt-4 space-y-2">
             <div className="grid grid-cols-2 gap-4 text-xs text-gray-500">
               <div className="bg-gray-50 p-2 rounded">
-                <div className="font-medium text-gray-700">Connection</div>
-                <div
-                  className={`text-lg font-bold ${
-                    sseConnected ? 'text-green-600' : 'text-red-600'
-                  }`}
-                >
-                  {sseConnected ? 'Active' : 'Inactive'}
+                <div className="font-medium text-gray-700">Game Phase</div>
+                <div className="text-base font-bold text-orange-600">
+                  {gameStatus}
                 </div>
               </div>
               <div className="bg-gray-50 p-2 rounded">
-                <div className="font-medium text-gray-700">Total Messages</div>
+                <div className="font-medium text-gray-700">Round</div>
                 <div className="text-lg font-bold text-orange-600">
-                  {chatMessages.length}
+                  {gameRound}
                 </div>
               </div>
               <div className="bg-gray-50 p-2 rounded">
-                <div className="font-medium text-gray-700">Total Messages</div>
+                <div className="font-medium text-gray-700">Aliving Agents</div>
                 <div className="text-lg font-bold text-orange-600">
-                  {chatMessages.length}
+                  {gameState?.remaining_agents?.length || 0}
                 </div>
               </div>
               <div className="bg-gray-50 p-2 rounded">
-                <div className="font-medium text-gray-700">Total Messages</div>
+                <div className="font-medium text-gray-700">
+                  Eliminated Agents
+                </div>
                 <div className="text-lg font-bold text-orange-600">
-                  {chatMessages.length}
+                  {gameState?.eliminated_agents?.length || 0}
                 </div>
               </div>
             </div>

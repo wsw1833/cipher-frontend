@@ -56,7 +56,7 @@ export const checkGameState = async (gameID: string) => {
     process.env.NEXT_PUBLIC_API_DOMAIN || 'http://localhost:3000';
 
   const response = await fetch(`${apiDomain}/games/${gameID}`, {
-    method: 'POST',
+    method: 'GET',
     headers: {
       'Content-Type': 'application/json',
     },
