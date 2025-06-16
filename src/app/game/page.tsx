@@ -106,6 +106,19 @@ function isValidPosition(
   return true;
 }
 
+function getSpriteIconPath(name: string, index: number): string {
+  const spriteMapping: { [key: string]: string } = {
+    agent_Alice: '/beer-mug.svg',
+    agent_Bob: '/beer-mug.svg',
+    agent_Cindy: '/beer-mug.svg',
+    agent_Dom: '/beer-mug.svg',
+    agent_Elise: '/beer-mug.svg',
+  };
+
+  // Return specific sprite for the character, or fallback to index-based naming
+  return spriteMapping[name] || `/sprites/character_${index + 1}.png`;
+}
+
 function getRandomDirection(): { x: number; y: number } {
   const directions = [
     { x: 0, y: -1 }, // up
@@ -305,6 +318,10 @@ const GamePage = () => {
       const botState = botStatesRef.current[index];
       if (!botState) return;
 
+      const isEliminated =
+        gameState?.eliminated_agents?.includes(bot.name) || false;
+      if (isEliminated) return; // Skip drawing eliminated bots
+
       bot.draw(
         ctx,
         botState.x,
@@ -316,7 +333,13 @@ const GamePage = () => {
         botState.message
       );
     });
-  }, [isInitialized, animationFrame, canvasDimensions, drawBackground]);
+  }, [
+    isInitialized,
+    animationFrame,
+    canvasDimensions,
+    drawBackground,
+    gameState?.eliminated_agents,
+  ]);
 
   // Initialize bots - Only run once
   useEffect(() => {
@@ -332,15 +355,16 @@ const GamePage = () => {
       }
 
       const botConfigs = [
-        { name: 'agent_Alice' },
-        { name: 'agent_Bob' },
-        { name: 'agent_Cindy' },
-        { name: 'agent_Dom' },
-        { name: 'agent_Elise' },
+        { name: 'agent_Alice', sprite: '/sprite.png' },
+        { name: 'agent_Bob', sprite: '/sprite.png' },
+        { name: 'agent_Cindy', sprite: '/sprite.png' },
+        { name: 'agent_Dom', sprite: '/sprite.png' },
+        { name: 'agent_Elise', sprite: '/sprite.png' },
       ];
 
       botsRef.current = botConfigs.map(
-        (config, index) => new SpriteBot(index, config.name, () => {}) // Empty callback since we handle messages via SSE
+        (config, index) =>
+          new SpriteBot(index, config.name, () => {}, config.sprite) // Empty callback since we handle messages via SSE
       );
 
       const initialBotStates: BotState[] = [];
@@ -655,8 +679,7 @@ const GamePage = () => {
               </h1>
             </div>
             <div className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
-              Scale: {canvasDimensions.scaleFactor.toFixed(2)}x •{' '}
-              {botStates.filter((s) => s.isMoving).length} moving
+              Scale: {canvasDimensions.scaleFactor.toFixed(2)}x
             </div>
           </div>
 
@@ -692,30 +715,73 @@ const GamePage = () => {
 
           {/* Bot Info Grid */}
           <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-            {botsRef.current?.slice(0, 6).map((bot, index) => (
-              <div
-                key={bot.name}
-                className="bg-gradient-to-r from-amber-50 to-orange-50 p-3 rounded-lg border"
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <div
-                    className="w-4 h-4 rounded-full border-2 border-gray-300"
-                    style={{ backgroundColor: bot.color }}
-                  ></div>
-                  <div className="font-semibold text-gray-800">{bot.name}</div>
+            {botsRef.current?.slice(0, 6).map((bot, index) => {
+              const isEliminated =
+                gameState?.eliminated_agents?.includes(bot.name) || false;
+              const characterImagePath = getSpriteIconPath(bot.name, index);
+              return (
+                <div
+                  key={bot.name}
+                  className={`p-3 rounded-lg border ${
+                    isEliminated
+                      ? 'bg-gray-100 opacity-60'
+                      : 'bg-gradient-to-r from-amber-50 to-orange-50'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <div
+                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center overflow-hidden ${
+                        isEliminated ? 'border-gray-400' : 'border-gray-300'
+                      }`}
+                      style={{
+                        borderColor: isEliminated ? '#999' : bot.color,
+                      }}
+                    >
+                      {isEliminated ? (
+                        <div className="w-6 h-6 bg-gray-300 rounded-full"></div>
+                      ) : (
+                        <NextImage
+                          src={characterImagePath}
+                          alt={`${bot.name} icon`}
+                          width={6}
+                          height={6}
+                          className="w-6 h-6 object-cover rounded-full"
+                        />
+                      )}
+                    </div>
+                    <div
+                      className={`font-semibold ${
+                        isEliminated
+                          ? 'text-gray-500 line-through'
+                          : 'text-gray-800'
+                      }`}
+                    >
+                      {bot.name}
+                    </div>
+                    {isEliminated && (
+                      <span className="text-red-500 text-xs">💀</span>
+                    )}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {isEliminated
+                      ? '💀 Eliminated'
+                      : botStates[index]?.isMoving
+                      ? '🚶 Moving'
+                      : '⏸️ Paused'}
+                  </div>
                 </div>
-                <div className="text-xs text-gray-500 mt-1">
-                  {botStates[index]?.isMoving ? '🚶 Moving' : '⏸️ Paused'}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
         {/* Chat Panel */}
-        <div className="w-full lg:w-120 bg-white rounded-xl shadow-xl p-6 flex flex-col">
+        <div className="w-full lg:w-124 bg-white rounded-xl shadow-xl p-6 flex flex-col">
           <div className="flex items-center gap-2 mb-4">
-            <h3 className="text-xl font-bold text-gray-800">💬 Town Chat</h3>
+            <h3 className="text-xl font-bold text-gray-800 flex flex-row items-center space-y-3">
+              <NextImage src={beerMug} alt="townchat" className="w-8 h-8" />{' '}
+              Town Chat
+            </h3>
             <div
               className={`text-xs px-2 py-1 rounded-full ${
                 connectionStatus === 'connected'
@@ -736,7 +802,7 @@ const GamePage = () => {
             </div>
           </div>
 
-          <div className="flex-1 min-h-0">
+          <div className="flex-1 min-h-0 mb-3">
             <div className="h-80 lg:h-116 overflow-y-auto border border-gray-200 rounded-lg p-3 space-y-3 bg-gray-50">
               {chatMessages.length === 0 ? (
                 <div className="text-gray-500 text-center py-12">
@@ -814,7 +880,7 @@ const GamePage = () => {
                 </div>
               </div>
               <div className="bg-gray-50 p-2 rounded">
-                <div className="font-medium text-gray-700">Aliving Agents</div>
+                <div className="font-medium text-gray-700">Alive Agents</div>
                 <div className="text-lg font-bold text-orange-600">
                   {gameState?.remaining_agents?.length || 0}
                 </div>

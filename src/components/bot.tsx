@@ -11,6 +11,7 @@ export class SpriteBot {
   private messageInterval: NodeJS.Timeout | null = null;
   private spriteImage: HTMLImageElement | null = null;
   private imageLoaded = false;
+  private spriteSheetPath: string;
 
   // Sprite sheet configuration for your layout
   private readonly SPRITE_FRAME_WIDTH = 34;
@@ -28,7 +29,8 @@ export class SpriteBot {
   constructor(
     index: number,
     name: string,
-    private onMessage: (index: number, message: string) => void
+    private onMessage: (index: number, message: string) => void,
+    spriteSheetPath?: string
   ) {
     this.index = index;
     this.name = name;
@@ -46,7 +48,23 @@ export class SpriteBot {
     ];
     this.color = colors[index % colors.length];
 
+    this.spriteSheetPath =
+      spriteSheetPath || this.getSpriteSheetPath(name);
+
     this.loadSpriteSheet();
+  }
+
+  private getSpriteSheetPath(name: string): string {
+    const spriteMapping: { [key: string]: string } = {
+      agent_Alice: '/sprite.png',
+      agent_Bob: '/sprite.png',
+      agent_Cindy: '/sprite.png',
+      agent_Dom: '/sprite.png',
+      agent_Elise: '/sprite.png ',
+    };
+
+    // Return specific sprite for the character, or fallback to index-based naming
+    return spriteMapping[name] || `/globe.svg`;
   }
 
   private async loadSpriteSheet() {
@@ -56,22 +74,33 @@ export class SpriteBot {
 
       this.spriteImage.onload = () => {
         this.imageLoaded = true;
-        console.log(`Sprite sheet loaded for ${this.name}`);
+        console.log(
+          `Sprite sheet loaded for ${this.name}: ${this.spriteSheetPath}`
+        );
       };
 
       this.spriteImage.onerror = (error) => {
         console.error(
-          `Failed to
-           load sprite sheet for ${this.name}:`,
+          `Failed to load sprite sheet for ${this.name} (${this.spriteSheetPath}):`,
           error
         );
         this.imageLoaded = false;
+        // Try fallback sprite
+        this.loadFallbackSprite();
       };
 
-      this.spriteImage.src = '/sprite.png';
+      this.spriteImage.src = this.spriteSheetPath;
     } catch (error) {
       console.error(`Error loading sprite sheet for ${this.name}:`, error);
       this.imageLoaded = false;
+    }
+  }
+
+  private loadFallbackSprite() {
+    if (this.spriteSheetPath !== '/sprites/default.png') {
+      console.log(`Trying fallback sprite for ${this.name}`);
+      this.spriteSheetPath = '/sprites/default.png';
+      this.loadSpriteSheet();
     }
   }
 
@@ -136,10 +165,11 @@ export class SpriteBot {
     direction: string,
     animationFrame: number,
     isMoving: boolean,
-    scaleFactor: number
+    scaleFactor: number,
+    isEliminated = false
   ) {
     if (!this.imageLoaded || !this.spriteImage) {
-      this.drawFallbackSprite(ctx, x, y, scaleFactor);
+      this.drawFallbackSprite(ctx, x, y, scaleFactor, isEliminated);
       return;
     }
 
@@ -158,6 +188,10 @@ export class SpriteBot {
     const destY = y - destHeight / 2;
 
     try {
+      if (isEliminated) {
+        ctx.globalAlpha = 0.3;
+      }
+
       ctx.drawImage(
         this.spriteImage,
         sourceX,
@@ -169,9 +203,11 @@ export class SpriteBot {
         destWidth,
         destHeight
       );
+
+      ctx.globalAlpha = 1.0;
     } catch (error) {
       console.error(`Error drawing sprite for ${this.name}:`, error);
-      this.drawFallbackSprite(ctx, x, y, scaleFactor);
+      this.drawFallbackSprite(ctx, x, y, scaleFactor, isEliminated);
     }
   }
 
@@ -179,9 +215,14 @@ export class SpriteBot {
     ctx: CanvasRenderingContext2D,
     x: number,
     y: number,
-    scaleFactor: number
+    scaleFactor: number,
+    isEliminated = false
   ) {
     const size = SPRITE_SIZE * scaleFactor;
+
+    if (isEliminated) {
+      ctx.globalAlpha = 0.3;
+    }
 
     ctx.fillStyle = this.color;
     ctx.fillRect(x - size / 2, y - size / 2, size, size * 0.8);
@@ -197,6 +238,7 @@ export class SpriteBot {
       12 * scaleFactor,
       2 * scaleFactor
     );
+    ctx.globalAlpha = 1.0;
   }
 
   public draw(
@@ -207,7 +249,8 @@ export class SpriteBot {
     animationFrame: number,
     isMoving: boolean,
     scaleFactor: number,
-    message?: string | null
+    message?: string | null,
+    isEliminated = false
   ) {
     const scaledX = x * scaleFactor;
     const scaledY = y * scaleFactor;
@@ -235,7 +278,8 @@ export class SpriteBot {
       direction,
       animationFrame,
       isMoving,
-      scaleFactor
+      scaleFactor,
+      isEliminated
     );
 
     // Draw collision radius (debug - can be removed)
@@ -254,7 +298,7 @@ export class SpriteBot {
     }
 
     // Draw message bubble if there's a message
-    if (message) {
+    if (message && !isEliminated) {
       this.drawMessageBubble(
         ctx,
         scaledX,
@@ -369,5 +413,12 @@ export class SpriteBot {
       clearTimeout(this.messageInterval);
       this.messageInterval = null;
     }
+  }
+
+  public getSpriteSheetInfo(): { path: string; loaded: boolean } {
+    return {
+      path: this.spriteSheetPath,
+      loaded: this.imageLoaded,
+    };
   }
 }

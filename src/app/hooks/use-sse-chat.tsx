@@ -129,16 +129,12 @@ export function useSSEChat() {
             setMessages((prev) => [...prev, newMessage].slice(-100)); // Keep last 100 messages
           }
 
-          if (
-            parsed.type === 'vote' &&
-            parsed.data.action &&
-            parsed.data.eliminated_agent
-          ) {
+          if (parsed.type === 'vote' && parsed.data.action) {
             const newMessage: ChatMessage = {
               id: crypto.randomUUID(),
               messaging:
                 parsed.data.eliminated_agent === null
-                  ? 'No elimination'
+                  ? 'No agent is eliminated'
                   : `Eliminated Agent: ${parsed.data.eliminated_agent}`,
               botname: 'System',
               timestamp: parsed.timestamp,
