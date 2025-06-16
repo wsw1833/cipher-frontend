@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { SpriteBot } from '../../components/bot';
+import Link from 'next/link';
+import { SpriteBot } from '@/components/bot';
 import {
   AI_MOVE_DURATION_MAX,
   AI_MOVE_DURATION_MIN,
@@ -15,10 +16,12 @@ import {
   FRAME_DURATION,
   WALKABLE_AREAS,
 } from '../../utils/properties';
-import { default as NextImage } from 'next/image';
-import { Input } from '@/components/ui/input';
-import BeerMug from '@images/beer-mug.svg';
-import { SSESetup } from '@/actions/sse';
+import { useSSEChat } from '../hooks/use-sse-chat';
+import {
+  checkGameState,
+  StartGameRound,
+  startVoting,
+} from '@/actions/game-phase';
 
 interface BotState {
   x: number;
@@ -29,16 +32,9 @@ interface BotState {
   messageTimeoutId?: NodeJS.Timeout;
   moveDirection?: { x: number; y: number };
   ai: {
-    action: 'alive' | 'dead';
+    action: 'moving' | 'paused';
     actionEndTime: number;
   };
-}
-
-interface ChatMessage {
-  id: string;
-  message: string;
-  timestamp: Date;
-  botName: string;
 }
 
 interface CanvasDimensions {
@@ -49,11 +45,11 @@ interface CanvasDimensions {
 
 // Spawn points in walkable areas
 const SPAWN_POINTS = [
-  { x: 100, y: 400 }, // Bottom left area
-  { x: 350, y: 250 }, // Center area
-  { x: 600, y: 150 }, // Top right area
+  { x: 150, y: 400 }, // Bottom left area
+  { x: 450, y: 250 }, // Center area
+  { x: 700, y: 150 }, // Top right area
   { x: 350, y: 520 }, // Bottom center
-  { x: 800, y: 350 }, // Right area
+  { x: 850, y: 350 }, // Right area
   { x: 150, y: 200 }, // Top left
   { x: 650, y: 500 }, // Bottom right
   { x: 450, y: 100 }, // Top center
@@ -71,7 +67,7 @@ function isValidPosition(
   excludeIndex = -1
 ): boolean {
   // Check canvas boundaries
-  const margin = 20;
+  const margin = 30;
   if (
     x < margin ||
     x > BASE_CANVAS_WIDTH - margin ||
@@ -104,25 +100,37 @@ function getRandomDirection(): { x: number; y: number } {
   return directions[Math.floor(Math.random() * directions.length)];
 }
 
-const Game = () => {
-  const [isMessage, setIsMessage] = useState(false);
+const GamePage = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const botsRef = useRef<SpriteBot[] | null>(null);
   const botStatesRef = useRef<BotState[]>([]);
   const animationIdRef = useRef<number | null>(null);
   const backgroundImageRef = useRef<HTMLImageElement | null>(null);
+  const initializationRef = useRef<boolean>(false);
 
   const [isInitialized, setIsInitialized] = useState(false);
   const [botStates, setBotStates] = useState<BotState[]>([]);
   const [animationFrame, setAnimationFrame] = useState<number>(0);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [backgroundLoaded, setBackgroundLoaded] = useState(false);
   const [canvasDimensions, setCanvasDimensions] = useState<CanvasDimensions>({
     width: BASE_CANVAS_WIDTH,
     height: BASE_CANVAS_HEIGHT,
     scaleFactor: 1,
   });
+  const [finalResult, setFinalResult] = useState<string | null>(null);
+  const [gameRound, setGameRound] = useState(0);
+
+  const {
+    messages: chatMessages,
+    isConnected: sseConnected,
+    connectionStatus,
+    connect: connectSSE,
+    disconnect: disconnectSSE,
+    terminateAllConnections,
+    gameStatus,
+    setGameStatus,
+  } = useSSEChat();
 
   // Load background image
   useEffect(() => {
@@ -139,18 +147,35 @@ const Game = () => {
 
         img.onerror = (error) => {
           console.error('Failed to load background image:', error);
-          setBackgroundLoaded(false);
+          setBackgroundLoaded(true); // Continue even if background fails
         };
 
         img.src = '/example.jpg';
       } catch (error) {
         console.error('Error loading background image:', error);
-        setBackgroundLoaded(false);
+        setBackgroundLoaded(true); // Continue even if background fails
       }
     };
 
     loadBackground();
   }, []);
+
+  // SSE Connection Management
+  useEffect(() => {
+    if (
+      backgroundLoaded &&
+      !sseConnected &&
+      connectionStatus === 'disconnected'
+    ) {
+      connectSSE();
+    }
+  }, [
+    backgroundLoaded,
+    sseConnected,
+    connectionStatus,
+    connectSSE,
+    disconnectSSE,
+  ]);
 
   const updateCanvasSize = useCallback(() => {
     if (!containerRef.current) return;
@@ -186,55 +211,6 @@ const Game = () => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [updateCanvasSize]);
-
-  const handleBotMessage = useCallback((index: number, message: string) => {
-    setBotStates((prevStates) => {
-      const newStates = [...prevStates];
-      const currentState = newStates[index];
-
-      if (currentState?.messageTimeoutId) {
-        clearTimeout(currentState.messageTimeoutId);
-      }
-
-      const timeoutId = setTimeout(() => {
-        setBotStates((states) => {
-          const clearedStates = [...states];
-          if (clearedStates[index]) {
-            clearedStates[index] = {
-              ...clearedStates[index],
-              message: null,
-              messageTimeoutId: undefined,
-            };
-          }
-          return clearedStates;
-        });
-      }, 5000);
-
-      newStates[index] = {
-        ...currentState,
-        message: message,
-        messageTimeoutId: timeoutId,
-      };
-
-      botStatesRef.current = newStates;
-      return newStates;
-    });
-
-    if (message.trim()) {
-      const botName = botsRef.current?.[index]?.name || `Bot ${index}`;
-      setChatMessages((prev) =>
-        [
-          ...prev,
-          {
-            id: crypto.randomUUID(),
-            message: message,
-            timestamp: new Date(),
-            botName: botName,
-          },
-        ].slice(-100)
-      );
-    }
-  }, []);
 
   const drawBackground = useCallback(
     (ctx: CanvasRenderingContext2D, scaleFactor: number) => {
@@ -323,35 +299,37 @@ const Game = () => {
     });
   }, [isInitialized, animationFrame, canvasDimensions, drawBackground]);
 
-  // Initialize bots
+  // Initialize bots - Only run once
   useEffect(() => {
-    const initializeGame = () => {
-      if (!botsRef.current) {
-        const botConfigs = [
-          { name: 'Alice', personality: 'helpful' },
-          { name: 'Bob', personality: 'friendly' },
-          { name: 'Cindy', personality: 'creative' },
-          { name: 'Dom', personality: 'analytical' },
-          { name: 'Elise', personality: 'explorer' },
-        ];
+    if (initializationRef.current || !backgroundLoaded) return;
 
-        botsRef.current = botConfigs.map(
-          (config, index) =>
-            new SpriteBot(
-              index,
-              config.name,
-              config.personality,
-              handleBotMessage
-            )
-        );
+    const initializeGame = () => {
+      console.log('Initializing game...');
+      initializationRef.current = true;
+
+      // Clean up any existing bots
+      if (botsRef.current) {
+        botsRef.current.forEach((bot) => bot.destroy?.());
       }
+
+      const botConfigs = [
+        { name: 'agent_Alice' },
+        { name: 'agent_Bob' },
+        { name: 'agent_Cindy' },
+        { name: 'agent_Dom' },
+        { name: 'agent_Elise' },
+      ];
+
+      botsRef.current = botConfigs.map(
+        (config, index) => new SpriteBot(index, config.name, () => {}) // Empty callback since we handle messages via SSE
+      );
 
       const initialBotStates: BotState[] = [];
 
       botsRef.current.forEach((_, index) => {
         const spawnPoint = SPAWN_POINTS[index % SPAWN_POINTS.length];
-        const offsetX = (Math.random() - 0.5) * 30;
-        const offsetY = (Math.random() - 0.5) * 30;
+        const offsetX = (Math.random() - 0.5) * 40;
+        const offsetY = (Math.random() - 0.5) * 40;
 
         initialBotStates.push({
           x: spawnPoint.x + offsetX,
@@ -360,7 +338,7 @@ const Game = () => {
           isMoving: false,
           message: null,
           ai: {
-            action: 'alive',
+            action: 'paused',
             actionEndTime:
               Date.now() +
               getRandomInt(AI_PAUSE_DURATION_MIN, AI_PAUSE_DURATION_MAX),
@@ -371,21 +349,23 @@ const Game = () => {
       botStatesRef.current = initialBotStates;
       setBotStates(initialBotStates);
       setIsInitialized(true);
+      console.log('Game initialized successfully!');
     };
 
-    if (backgroundLoaded) {
-      initializeGame();
-    }
+    initializeGame();
 
     return () => {
       if (botsRef.current) {
         botsRef.current.forEach((bot) => bot.destroy?.());
+        botsRef.current = null;
       }
       if (animationIdRef.current) {
         cancelAnimationFrame(animationIdRef.current);
+        animationIdRef.current = null;
       }
+      initializationRef.current = false;
     };
-  }, [handleBotMessage, backgroundLoaded]);
+  }, [backgroundLoaded]);
 
   // Animation loop
   useEffect(() => {
@@ -414,16 +394,10 @@ const Game = () => {
       currentBotStates.forEach((botState, index) => {
         const now = Date.now();
 
-        // Only process AI for alive bots
-        if (botState.ai.action === 'dead') {
-          botState.isMoving = false;
-          return;
-        }
-
         if (now >= botState.ai.actionEndTime) {
-          if (!botState.isMoving) {
-            // Start moving
+          if (botState.ai.action === 'paused') {
             botState.moveDirection = getRandomDirection();
+            botState.ai.action = 'moving';
             botState.ai.actionEndTime =
               now + getRandomInt(AI_MOVE_DURATION_MIN, AI_MOVE_DURATION_MAX);
             botState.isMoving = true;
@@ -440,7 +414,7 @@ const Game = () => {
 
             stateChanged = true;
           } else {
-            // Stop moving (pause)
+            botState.ai.action = 'paused';
             botState.ai.actionEndTime =
               now + getRandomInt(AI_PAUSE_DURATION_MIN, AI_PAUSE_DURATION_MAX);
             botState.isMoving = false;
@@ -449,12 +423,7 @@ const Game = () => {
           }
         }
 
-        // Handle movement for alive bots
-        if (
-          botState.ai.action === 'alive' &&
-          botState.isMoving &&
-          botState.moveDirection
-        ) {
+        if (botState.ai.action === 'moving' && botState.moveDirection) {
           const moveSpeed = AI_MOVE_SPEED * (deltaTime / 16.67);
           const newX = botState.x + botState.moveDirection.x * moveSpeed;
           const newY = botState.y + botState.moveDirection.y * moveSpeed;
@@ -488,6 +457,7 @@ const Game = () => {
             }
 
             if (!foundValidDirection) {
+              botState.ai.action = 'paused';
               botState.ai.actionEndTime = now + getRandomInt(1000, 2000);
               botState.isMoving = false;
               botState.moveDirection = undefined;
@@ -518,48 +488,133 @@ const Game = () => {
     };
   }, [isInitialized, drawGame]);
 
-  //stream and game API logic
+  // Handle SSE messages and show speech bubbles on corresponding sprites
   useEffect(() => {
-    const gameID = localStorage.getItem('gameID');
-    if (!gameID) {
-      console.error('No gameID found in localStorage');
+    if (chatMessages.length === 0 || !botsRef.current) return;
+
+    // Get the latest message
+    const latestMessage = chatMessages[chatMessages.length - 1];
+
+    // Find the bot index by matching the name
+    const botIndex = botsRef.current.findIndex(
+      (bot) =>
+        bot.name === latestMessage.botname ||
+        bot.name.includes(latestMessage.botname.replace('agent_', ''))
+    );
+
+    if (botIndex !== -1) {
+      // Update the bot state to show "..." message bubble
+      setBotStates((prevStates) => {
+        const newStates = [...prevStates];
+        const currentState = newStates[botIndex];
+
+        // Clear any existing timeout
+        if (currentState?.messageTimeoutId) {
+          clearTimeout(currentState.messageTimeoutId);
+        }
+
+        // Set the message to "..." and create timeout to clear it
+        const timeoutId = setTimeout(() => {
+          setBotStates((states) => {
+            const clearedStates = [...states];
+            if (clearedStates[botIndex]) {
+              clearedStates[botIndex] = {
+                ...clearedStates[botIndex],
+                message: null,
+                messageTimeoutId: undefined,
+              };
+              botStatesRef.current = clearedStates;
+            }
+            return clearedStates;
+          });
+        }, 6000);
+
+        newStates[botIndex] = {
+          ...currentState,
+          message: '...',
+          messageTimeoutId: timeoutId,
+        };
+
+        botStatesRef.current = newStates;
+        return newStates;
+      });
+    }
+  }, [chatMessages]);
+
+  useEffect(() => {
+    if (!sseConnected && connectionStatus !== 'connected') {
       return;
     }
 
-    const eventSource = SSESetup(gameID);
-  }, []);
+    const gameID = localStorage.getItem('gameID');
+    if (!gameID) {
+      console.log('gameID does not exist!');
+      return;
+    }
+
+    const handleGameFlow = async () => {
+      try {
+        switch (gameStatus) {
+          case 'communication':
+            await StartGameRound(gameID);
+            break;
+
+          case 'voting':
+            await startVoting(gameID);
+            break;
+
+          case 'gameCheck':
+            const data = await checkGameState(gameID);
+            if (data && data.result !== null) {
+              setFinalResult(data.result);
+              terminateAllConnections();
+              // Navigate to post analysis page
+              setGameRound((prev) => prev + 1);
+            }
+            break;
+
+          // Don't handle 'analysis' here - it needs user input
+          default:
+            break;
+        }
+      } catch (error) {
+        console.log('Game flow error:', error);
+      }
+    };
+
+    // Only execute automated phases if we don't have a result yet
+    if (finalResult === null && gameStatus !== 'analysis') {
+      handleGameFlow();
+    }
+  }, [gameStatus, finalResult, sseConnected, connectionStatus]);
 
   return (
-    <div className="min-h-screen bg-[#15130A] p-2 md:p-4">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50 p-2 md:p-4">
       <div className="flex flex-col lg:flex-row gap-4 max-w-7xl mx-auto">
         <div
           ref={containerRef}
-          className="flex-1 bg-[#262012] rounded-xl shadow-xl p-6 min-h-0"
+          className="flex-1 bg-white rounded-xl shadow-xl p-6 min-h-0"
         >
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-2">
-            <h1 className="flex flex-row items-center gap-2 text-2xl md:text-3xl text-white font-bold bg-clip-text">
-              <NextImage
-                src={BeerMug}
-                alt="beermug"
-                className="w-10 h-10"
-                priority
-              />
-              CipherWolves
-            </h1>
-            <div className="text-sm text-white px-3 py-1">
+            <div className="flex items-center gap-4">
+              <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
+                🏰 Medieval Town Simulator
+              </h1>
+            </div>
+            <div className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
               Scale: {canvasDimensions.scaleFactor.toFixed(2)}x •{' '}
-              {botStates.filter((s) => s.ai.action === 'alive').length} alive
+              {botStates.filter((s) => s.isMoving).length} moving
             </div>
           </div>
 
           {!isInitialized ? (
             <div className="flex items-center justify-center h-64 md:h-96">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-2 mx-auto mb-4"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-amber-600 border-t-transparent mx-auto mb-4"></div>
                 <div className="text-lg font-medium text-gray-700">
-                  Loading map...
+                  Loading medieval town...
                 </div>
-                <div className="text-sm text-white mt-2">
+                <div className="text-sm text-gray-500 mt-2">
                   {backgroundLoaded
                     ? 'Setting up characters...'
                     : 'Loading background...'}
@@ -572,7 +627,7 @@ const Game = () => {
                 ref={canvasRef}
                 width={canvasDimensions.width}
                 height={canvasDimensions.height}
-                className="border-2 border-[#15130A] rounded-lg shadow-lg"
+                className="border-2 border-gray-200 rounded-lg shadow-lg"
                 style={{
                   width: canvasDimensions.width,
                   height: canvasDimensions.height,
@@ -583,28 +638,21 @@ const Game = () => {
           )}
 
           {/* Bot Info Grid */}
-          <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-3 text-sm ">
+          <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
             {botsRef.current?.slice(0, 6).map((bot, index) => (
               <div
                 key={bot.name}
-                className="bg-[#15130A] p-3 rounded-lg border-2 border-[#15130A]"
+                className="bg-gradient-to-r from-amber-50 to-orange-50 p-3 rounded-lg border"
               >
                 <div className="flex items-center gap-2 mb-1">
                   <div
-                    className="w-4 h-4 rounded-full border-2 border-white"
+                    className="w-4 h-4 rounded-full border-2 border-gray-300"
                     style={{ backgroundColor: bot.color }}
                   ></div>
-                  <div className="font-semibold text-white">{bot.name}</div>
+                  <div className="font-semibold text-gray-800">{bot.name}</div>
                 </div>
-                <div className="text-xs text-white capitalize">
-                  {bot.personality}
-                </div>
-                <div className="text-xs text-white mt-1">
-                  {botStates[index]?.ai.action === 'alive'
-                    ? botStates[index]?.isMoving
-                      ? '🚶 Moving'
-                      : '⏸️ Resting'
-                    : '💀 Dead'}
+                <div className="text-xs text-gray-500 mt-1">
+                  {botStates[index]?.isMoving ? '🚶 Moving' : '⏸️ Paused'}
                 </div>
               </div>
             ))}
@@ -612,43 +660,50 @@ const Game = () => {
         </div>
 
         {/* Chat Panel */}
-        <div className="w-full lg:w-110 bg-[#262012] rounded-xl shadow-xl p-6 flex flex-col">
-          <div className="flex flex-row items-center gap-2 mb-4">
-            <h3 className="flex flex-row items-center gap-2 text-xl font-bold text-white">
-              <NextImage
-                src={BeerMug}
-                alt="beermug"
-                className="w-8 h-8"
-                priority
-              />
-              Town Chat
-            </h3>
-            <div className="bg-[#E9DC56] text-black font-semibold text-xs lg:text-sm px-2 py-1 rounded-full">
+        <div className="w-full lg:w-96 bg-white rounded-xl shadow-xl p-6 flex flex-col">
+          <div className="flex items-center gap-2 mb-4">
+            <h3 className="text-xl font-bold text-gray-800">💬 Town Chat</h3>
+            <div
+              className={`text-xs px-2 py-1 rounded-full ${
+                connectionStatus === 'connected'
+                  ? 'bg-green-100 text-green-800'
+                  : connectionStatus === 'connecting'
+                  ? 'bg-yellow-100 text-yellow-800'
+                  : 'bg-red-100 text-red-800'
+              }`}
+            >
+              {connectionStatus === 'connected'
+                ? '🟢 Connected'
+                : connectionStatus === 'connecting'
+                ? '🟡 Connecting...'
+                : '🔴 Disconnected'}
+            </div>
+            <div className="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded-full">
               {chatMessages.length} messages
             </div>
           </div>
 
-          <div className="flex-1 min-h-0 mt-4">
-            <div className="h-80 lg:h-120 overflow-y-auto border border-black rounded-lg p-3 space-y-3 bg-[#15130A]">
+          <div className="flex-1 min-h-0">
+            <div className="h-80 lg:h-96 overflow-y-auto border border-gray-200 rounded-lg p-3 space-y-3 bg-gray-50">
               {chatMessages.length === 0 ? (
-                <div className="text-white text-center py-12">
+                <div className="text-gray-500 text-center py-12">
                   <div className="text-4xl mb-2">🏰</div>
                   <div className="font-medium">
                     Waiting for town conversations...
                   </div>
                   <div className="text-sm mt-1">
-                    characters will start chatting soon!
+                    Medieval characters will start chatting soon!
                   </div>
                 </div>
               ) : (
                 chatMessages.map((msg) => {
                   const bot = botsRef.current?.find(
-                    (b) => b.name === msg.botName.split(':')[0]
+                    (b) => b.name === msg.botname.split(':')[0]
                   );
                   return (
                     <div
                       key={msg.id}
-                      className="bg-[#44381CFF] p-3 rounded-lg shadow-sm border-l-4"
+                      className="bg-white p-3 rounded-lg shadow-sm border-l-4"
                       style={{ borderLeftColor: bot?.color || '#ccc' }}
                     >
                       <div className="flex items-center justify-between mb-2">
@@ -657,36 +712,52 @@ const Game = () => {
                             className="w-3 h-3 rounded-full"
                             style={{ backgroundColor: bot?.color || '#ccc' }}
                           ></div>
-                          <div className="text-sm font-semibold text-white">
-                            {msg.botName.split(':')[0]}
+                          <div className="text-sm font-semibold text-gray-800">
+                            {msg.botname.split(':')[0]}
                           </div>
                         </div>
-                        <div className="text-xs text-gray-100">
-                          {msg.timestamp.toLocaleTimeString()}
+                        <div className="text-xs text-gray-500">
+                          {new Date(msg.timestamp).toLocaleTimeString()}
                         </div>
                       </div>
-                      <div className=" text-gray-50 leading-relaxed">
-                        {msg.message}
+                      <div className="text-sm text-gray-700 leading-relaxed">
+                        {msg.messaging}
                       </div>
                     </div>
                   );
                 })
               )}
             </div>
-            <div className="mt-10 text-white">
-              <Input
-                className="text-white placholder:text-[#ffffff] bg-[#15130A] border-2 border-[#15130A] focus-visible:border-[#262012] focus-visible:ring-[#15130A]"
-                disabled={isMessage}
-                placeholder="Enter some useful info for the agents"
-              />
-            </div>
-            <div className="mt-10 grid grid-cols-2 text-xs">
-              <div className="bg-[#15130A] p-2 rounded-md border-2 border-[#15130A]">
-                <div className="text-md font-medium text-gray-50">
-                  Alive Agents
+          </div>
+
+          <div className="mt-4 space-y-2">
+            <div className="grid grid-cols-2 gap-4 text-xs text-gray-500">
+              <div className="bg-gray-50 p-2 rounded">
+                <div className="font-medium text-gray-700">Connection</div>
+                <div
+                  className={`text-lg font-bold ${
+                    sseConnected ? 'text-green-600' : 'text-red-600'
+                  }`}
+                >
+                  {sseConnected ? 'Active' : 'Inactive'}
                 </div>
-                <div className="text-xl font-bold text-amber-600">
-                  {botStates.filter((s) => s.ai.action === 'alive').length}
+              </div>
+              <div className="bg-gray-50 p-2 rounded">
+                <div className="font-medium text-gray-700">Total Messages</div>
+                <div className="text-lg font-bold text-orange-600">
+                  {chatMessages.length}
+                </div>
+              </div>
+              <div className="bg-gray-50 p-2 rounded">
+                <div className="font-medium text-gray-700">Total Messages</div>
+                <div className="text-lg font-bold text-orange-600">
+                  {chatMessages.length}
+                </div>
+              </div>
+              <div className="bg-gray-50 p-2 rounded">
+                <div className="font-medium text-gray-700">Total Messages</div>
+                <div className="text-lg font-bold text-orange-600">
+                  {chatMessages.length}
                 </div>
               </div>
             </div>
@@ -697,4 +768,4 @@ const Game = () => {
   );
 };
 
-export default Game;
+export default GamePage;

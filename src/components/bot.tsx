@@ -7,7 +7,6 @@ import {
 export class SpriteBot {
   public index: number;
   public name: string;
-  public personality: string;
   public color: string;
   private messageInterval: NodeJS.Timeout | null = null;
   private spriteImage: HTMLImageElement | null = null;
@@ -29,12 +28,10 @@ export class SpriteBot {
   constructor(
     index: number,
     name: string,
-    personality: string,
     private onMessage: (index: number, message: string) => void
   ) {
     this.index = index;
     this.name = name;
-    this.personality = personality;
 
     // Assign unique colors for name tags and UI elements
     const colors = [
@@ -50,7 +47,6 @@ export class SpriteBot {
     this.color = colors[index % colors.length];
 
     this.loadSpriteSheet();
-    this.startBehavior();
   }
 
   private async loadSpriteSheet() {
@@ -77,63 +73,6 @@ export class SpriteBot {
       console.error(`Error loading sprite sheet for ${this.name}:`, error);
       this.imageLoaded = false;
     }
-  }
-
-  private startBehavior() {
-    const sendMessage = () => {
-      const personalityMessages = {
-        friendly: [
-          'Welcome to our medieval town! 🏰',
-          'Beautiful day in the village!',
-          'Anyone need directions around town?',
-          'Love the cobblestone streets here!',
-          'The market square is bustling today!',
-        ],
-        analytical: [
-          'Analyzing optimal patrol routes...',
-          'Town layout efficiency: 87%',
-          'Monitoring foot traffic patterns.',
-          'Security perimeter established.',
-          'Data collection in progress.',
-        ],
-        creative: [
-          'This architecture inspires me! ✨',
-          'The stonework is magnificent!',
-          'I see stories in every building.',
-          'What tales these walls could tell!',
-          'Art is everywhere in this town!',
-        ],
-        helpful: [
-          'Need help finding anything? 🤝',
-          'I know all the best shops here!',
-          'Let me show you around town!',
-          'The inn serves excellent meals!',
-          'Happy to assist fellow travelers!',
-        ],
-        explorer: [
-          'Discovering hidden alleyways! 🗺️',
-          'Every corner holds new secrets!',
-          'The town has such rich history!',
-          'Adventure awaits beyond those walls!',
-          'Exploring every nook and cranny!',
-        ],
-      };
-
-      const messages =
-        personalityMessages[
-          this.personality as keyof typeof personalityMessages
-        ] || personalityMessages.friendly;
-      const randomMessage =
-        messages[Math.floor(Math.random() * messages.length)];
-
-      this.onMessage(this.index, randomMessage);
-
-      const nextMessageTime = Math.random() * 15000 + 10000; // 10-25 seconds
-      this.messageInterval = setTimeout(sendMessage, nextMessageTime);
-    };
-
-    const initialDelay = Math.random() * 8000 + 3000; // 3-11 seconds
-    this.messageInterval = setTimeout(sendMessage, initialDelay);
   }
 
   // Calculate sprite frame based on direction and animation (left to right)
