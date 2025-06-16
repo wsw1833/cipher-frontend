@@ -1,103 +1,146 @@
-import Image from "next/image";
+'use client';
+
+import React, { useState } from 'react';
+import Image from 'next/image';
+import Sword from '@images/sword.svg';
+import Torch from '@images/torch.png';
+import Key from '@images/medieval-key.svg';
+import PersonaCard from '@/components/personasCard';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { createGame } from '@/actions/create-game';
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+  const handle = async () => {
+    setIsLoading(true);
+
+    try {
+      // Check if API response indicates success
+      const data = await createGame();
+      if (data.game_id) {
+        console.log('Game started successfully:', data.game_id);
+        localStorage.setItem('gameID', data.game_id);
+        // Route to game page on success
+        router.push('/game');
+      } else {
+        console.error('Game start failed:', data.message);
+        // Handle API error response
+        alert('Failed to start game. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error starting game:', error);
+      alert('Network error. Please check your connection and try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <main className="min-h-screen bg-[#15130A] overflow-hidden">
+      <section className="relative w-screen h-screen overflow-hidden">
+        <div className="bg-[url('/bg-game.png')] absolute inset-0 bg-cover bg-center bg-no-repeat shadow-xl mask-b-from-70% mask-t-from-100% mask-b-to-transparent blur-[2px] brightness-[0.5] transform-[1.02]" />
+
+        <div className="relative z-10 h-full flex flex-col items-center justify-center gap-4">
+          <div className="text-center space-y-8 relative z-10">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white line-clamp-2 md:w-[55rem] h-[7rem]">
+              Decode Alliances, Outsmart Deception, Emerge Victorious
+            </h1>
+            <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-white">
+              CipherWolves
+            </h2>
+          </div>
+
+          <Button
+            className="bg-[#E9DC56] hover:bg-[#B7AA19] text-gray-900 hover:text-black font-semibold text-lg px-8 py-4 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-xl flex items-center gap-3 mt-6"
+            onClick={handle}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            {isLoading ? 'Starting...' : 'Start Game'}
+            <Image src={Sword} alt="sword" priority className="w-6 h-6" />
+          </Button>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      </section>
+      <section className="relative flex flex-row lg:justify-between justify-center w-screen h-[35rem] px-15 my-15">
+        <div className="flex flex-col items-top justify-center w-min-fit h-full space-y-6">
+          <h1 className="text-2xl lg:text-3xl font-bold text-white line-clamp-2 lg:w-[32rem] lg:text-left text-center">
+            Play the Game of Hidden Agendas and Dynamic Alliances!
+          </h1>
+          <h3 className="text-base lg:text-lg text-white font-light lg:w-[32rem] lg:text-left text-center">
+            Dive into CipherWolves, where AI agents navigate coded
+            communication, deception, and ever-shifting loyalties. Form
+            alliances, decode secrets, and expose imposters in a high-stakes
+            battle of strategy and adaptation. In this game, nothing is as it
+            seems, and every move tests your wit and cunning.
+          </h3>
+          <ol className="list-none space-y-3 pl-0 text-white text-base md:text-lg flex flex-col lg:items-start items-center">
+            <li className="flex items-start gap-3">
+              <Image
+                src={Key}
+                alt="Check"
+                className="w-6 h-6 md:w-8 md:h-8 mt-0.5 flex-shrink-0"
+              />
+              <span>Dynamic Coded Communication</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <Image
+                src={Key}
+                alt="Star"
+                className="w-6 h-6 md:w-8 md:h-8 mt-0.5 flex-shrink-0"
+              />
+              <span>Deception and Alliance Strategy</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <Image
+                src={Key}
+                alt="Arrow"
+                className="w-6 h-6 md:w-8 md:h-8 mt-0.5 flex-shrink-0"
+              />
+              <span>AI-Driven Emotional Intelligence</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <Image
+                src={Key}
+                alt="Arrow"
+                className="w-6 h-6 md:w-8 md:h-8 mt-0.5 flex-shrink-0"
+              />
+              <span>Interactive Spectator Role</span>
+            </li>
+          </ol>
+          <div className="w-full flex justify-center lg:justify-start">
+            <Button
+              className="bg-[#E9DC56] hover:bg-[#B7AA19] text-gray-900 hover:text-black font-semibold text-lg rounded-lg transition-all duration-300 transform hover:scale-105 shadow-xl px-10"
+              onClick={handle}
+            >
+              Try Demo Now!
+              <Image src={Torch} alt="torch" priority className="w-10 h-10" />
+            </Button>
+          </div>
+        </div>
+        <div className="grid-cols-2 w-[50rem] h-full justify-center gap-6 text-white text-xl lg:grid hidden">
+          <span className="col-span-1 bg-[url('/codebook.png')] lg:bg-cover bg-auto bg-center w-full h-full rounded-[12px] opacity-85 drop-shadow-orange-900/60 drop-shadow-md" />
+          <span className="col-span-1 bg-[url('/deception.png')] lg:bg-cover bg-auto bg-center w-full h-full rounded-[12px] opacity-85 drop-shadow-orange-900/60 drop-shadow-md" />
+          <span className="col-span-1 bg-[url('/bg-game.png')] bg-cover w-full h-full rounded-[12px] opacity-85 drop-shadow-orange-900/60 drop-shadow-md" />
+          <span className="col-span-1 bg-[url('/bg-game.png')] bg-cover w-full h-full rounded-[12px] opacity-85 drop-shadow-orange-900/60 drop-shadow-md" />
+        </div>
+      </section>
+      <section className="flex flex-row w-screen h-[5rem]">
+        <div className="flex flex-row items-top justify-center w-full h-full my-20">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white text-center">
+            {'Unique Personas and Traits'}
+          </h1>
+        </div>
+      </section>
+      <section className="relative w-screen min-h-screen overflow-hidden flex items-center justify-center">
+        <div className="bg-[url('/bg2.jpg')] absolute inset-0 bg-cover bg-center bg-no-repeat shadow-xl mask-t-from-70% mask-b-from-100% mask-b-to-transparent blur-[1.5px] brightness-[0.7]" />
+        <div className="flex items-center justify-center gap-6 text-white lg:mt-0 mt-20 ">
+          <PersonaCard />
+        </div>
+      </section>
+      <section className="relative w-screen h-[10rem] bg-[#262012] brightness-[0.8] overflow-hidden flex items-center justify-center">
+        <span className="text-white font-bold text-3xl">CipherWolves</span>
+      </section>
+    </main>
   );
 }
