@@ -55,7 +55,7 @@ export default function Home() {
           </div>
 
           <Button
-            className="bg-[#E9DC56] hover:bg-[#B7AA19] text-gray-900 hover:text-black font-semibold text-lg px-8 py-4 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-xl flex items-center gap-3 mt-6"
+            className="bg-[#ffb300] hover:bg-[#FFC400FF] text-gray-900 hover:text-black font-semibold text-lg px-8 py-4 rounded-lg transition-all duration-300 transform hover:scale-108 shadow-md shadow-amber-500/50 flex items-center gap-3 mt-6"
             onClick={handle}
           >
             {isLoading ? 'Starting...' : 'Start Game'}
@@ -111,7 +111,7 @@ export default function Home() {
           </ol>
           <div className="w-full flex justify-center lg:justify-start">
             <Button
-              className="bg-[#E9DC56] hover:bg-[#B7AA19] text-gray-900 hover:text-black font-semibold text-lg rounded-lg transition-all duration-300 transform hover:scale-105 shadow-xl px-10"
+              className="bg-[#ffb300] hover:bg-[#FFC400FF] text-gray-900 hover:text-black font-semibold text-lg rounded-lg transition-all duration-300 transform hover:scale-108 shadow-[0_2.8px_2.2px_rgba(0,_0,_0,_0.034),_0_6.7px_5.3px_rgba(0,_0,_0,_0.048),_0_12.5px_10px_rgba(0,_0,_0,_0.06),_0_22.3px_17.9px_rgba(0,_0,_0,_0.072),_0_41.8px_33.4px_rgba(0,_0,_0,_0.086),_0_100px_80px_rgba(0,_0,_0,_0.12)] px-10 shadow-amber-500/30"
               onClick={handle}
             >
               Try Demo Now!

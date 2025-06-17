@@ -27,6 +27,7 @@ import beerMug from '@images/beer-mug.svg';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
+import { ScrollArea } from '@radix-ui/react-scroll-area';
 
 interface BotState {
   x: number;
@@ -110,7 +111,7 @@ function getSpriteIconPath(name: string, index: number): string {
   const spriteMapping: { [key: string]: string } = {
     agent_Alice: '/beer-mug.svg',
     agent_Bob: '/beer-mug.svg',
-    agent_Cindy: '/beer-mug.svg',
+    agent_Charlie: '/beer-mug.svg',
     agent_Dom: '/beer-mug.svg',
     agent_Elise: '/beer-mug.svg',
   };
@@ -151,6 +152,7 @@ const GamePage = () => {
   const [finalResult, setFinalResult] = useState<string | null>(null);
   const [gameState, setGameState] = useState<GameData | null>(null);
   const [gameRound, setGameRound] = useState(1);
+  const [submitting, setSubmitting] = useState<boolean>(false);
   const router = useRouter();
 
   const {
@@ -357,7 +359,7 @@ const GamePage = () => {
       const botConfigs = [
         { name: 'agent_Alice', sprite: '/sprite.png' },
         { name: 'agent_Bob', sprite: '/sprite.png' },
-        { name: 'agent_Cindy', sprite: '/sprite.png' },
+        { name: 'agent_Charlie', sprite: '/sprite.png' },
         { name: 'agent_Dom', sprite: '/sprite.png' },
         { name: 'agent_Elise', sprite: '/sprite.png' },
       ];
@@ -585,6 +587,7 @@ const GamePage = () => {
   }, [chatMessages]);
 
   const handleAnalysisSubmit = async (userInput: string) => {
+    setSubmitting(true);
     const gameID = localStorage.getItem('gameID');
     if (!gameID) return;
 
@@ -665,11 +668,11 @@ const GamePage = () => {
   }, [gameStatus, finalResult, sseConnected, connectionStatus]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50 p-2 md:p-4">
+    <div className="min-h-screen bg-[#15130A] p-2 md:p-4">
       <div className="flex flex-col lg:flex-row gap-4 max-w-7xl mx-auto">
         <div
           ref={containerRef}
-          className="flex-1 bg-white rounded-xl shadow-xl p-6 min-h-0"
+          className="flex-1 shadow-[0_2px_8px_rgb(0,0,0,0.2)] shadow-[#FF990050] border-0 bg-[#1a1810] text-white rounded-xl p-6 min-h-0"
         >
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-2">
             <div className="flex items-center gap-4">
@@ -678,7 +681,7 @@ const GamePage = () => {
                 CipherWolves
               </h1>
             </div>
-            <div className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+            <div className="text-xs font-medium text-black bg-[#ffb300] px-3 py-1 rounded-full">
               Scale: {canvasDimensions.scaleFactor.toFixed(2)}x
             </div>
           </div>
@@ -703,7 +706,7 @@ const GamePage = () => {
                 ref={canvasRef}
                 width={canvasDimensions.width}
                 height={canvasDimensions.height}
-                className="border-2 border-gray-200 rounded-lg shadow-lg"
+                className=" rounded-lg shadow-lg"
                 style={{
                   width: canvasDimensions.width,
                   height: canvasDimensions.height,
@@ -776,9 +779,9 @@ const GamePage = () => {
         </div>
 
         {/* Chat Panel */}
-        <div className="w-full lg:w-124 bg-white rounded-xl shadow-xl p-6 flex flex-col">
+        <div className="w-full lg:w-124 shadow-[0_2px_8px_rgb(0,0,0,0.2)] shadow-[#FF990050] border-0 bg-[#1a1810] rounded-xl p-6 flex flex-col">
           <div className="flex items-center gap-2 mb-4">
-            <h3 className="text-xl font-bold text-gray-800 flex flex-row items-center space-y-3">
+            <h3 className="text-xl font-bold text-white flex flex-row items-center space-y-3">
               <NextImage src={beerMug} alt="townchat" className="w-8 h-8" />{' '}
               Town Chat
             </h3>
@@ -803,9 +806,9 @@ const GamePage = () => {
           </div>
 
           <div className="flex-1 min-h-0 mb-3">
-            <div className="h-80 lg:h-116 overflow-y-auto border border-gray-200 rounded-lg p-3 space-y-3 bg-gray-50">
+            <div className="h-80 lg:h-116 overflow-y-auto border border-amber-500/20 rounded-lg p-3 space-y-3 bg-[#2D2B22FF]">
               {chatMessages.length === 0 ? (
-                <div className="text-gray-500 text-center py-12">
+                <div className="text-white/60 text-center py-12">
                   <div className="text-4xl mb-2">🏰</div>
                   <div className="font-medium">
                     Waiting for town conversations...
@@ -820,29 +823,31 @@ const GamePage = () => {
                     (b) => b.name === msg.botname.split(':')[0]
                   );
                   return (
-                    <div
-                      key={msg.id}
-                      className="bg-white p-3 rounded-lg shadow-sm border-l-4"
-                      style={{ borderLeftColor: bot?.color || '#ccc' }}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: bot?.color || '#ccc' }}
-                          ></div>
-                          <div className="text-sm font-semibold text-gray-800">
-                            {msg.botname.split(':')[0]}
+                    <ScrollArea key={msg.id}>
+                      <div
+                        key={msg.id}
+                        className="bg-[#2a2520] p-3 rounded-lg shadow-sm border-l-4"
+                        style={{ borderLeftColor: bot?.color || '#ccc' }}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: bot?.color || '#ccc' }}
+                            ></div>
+                            <div className="text-sm font-semibold text-white">
+                              {msg.botname.split(':')[0]}
+                            </div>
+                          </div>
+                          <div className="text-xs text-white">
+                            {new Date(msg.timestamp).toLocaleTimeString()}
                           </div>
                         </div>
-                        <div className="text-xs text-gray-500">
-                          {new Date(msg.timestamp).toLocaleTimeString()}
+                        <div className="text-sm text-white leading-relaxed">
+                          {msg.messaging}
                         </div>
                       </div>
-                      <div className="text-sm text-gray-700 leading-relaxed">
-                        {msg.messaging}
-                      </div>
-                    </div>
+                    </ScrollArea>
                   );
                 })
               )}
@@ -854,12 +859,15 @@ const GamePage = () => {
               type="text"
               value={userInput}
               onChange={(e) => setUserInput(e.target.value)}
+              className="border-2 text-white"
               placeholder="Enter your analysis..."
               disabled={gameStatus !== 'analysis'}
             />
             <Button
+              variant="outline"
               onClick={() => handleAnalysisSubmit(userInput)}
-              disabled={gameStatus !== 'analysis'}
+              disabled={gameStatus !== 'analysis' || submitting}
+              className="flex items-center gap-2"
             >
               Send
             </Button>
@@ -867,29 +875,29 @@ const GamePage = () => {
 
           <div className="mt-4 space-y-2">
             <div className="grid grid-cols-2 gap-4 text-xs text-gray-500">
-              <div className="bg-gray-50 p-2 rounded">
-                <div className="font-medium text-gray-700">Game Phase</div>
-                <div className="text-base font-bold text-orange-600">
+              <div className="bg-[#2a2520] p-2 rounded">
+                <div className="font-medium text-white/70">Game Phase</div>
+                <div className="text-base font-bold text-amber-500">
                   {gameStatus}
                 </div>
               </div>
-              <div className="bg-gray-50 p-2 rounded">
-                <div className="font-medium text-gray-700">Round</div>
-                <div className="text-lg font-bold text-orange-600">
+              <div className="bg-[#2a2520] p-2 rounded">
+                <div className="font-medium text-white/70">Round</div>
+                <div className="text-xl font-bold text-amber-500">
                   {gameRound}
                 </div>
               </div>
-              <div className="bg-gray-50 p-2 rounded">
-                <div className="font-medium text-gray-700">Alive Agents</div>
-                <div className="text-lg font-bold text-orange-600">
+              <div className="bg-[#2a2520] p-2 rounded">
+                <div className="font-medium text-white/70">Alive Agents</div>
+                <div className="text-xl font-bold text-amber-500">
                   {gameState?.remaining_agents?.length || 0}
                 </div>
               </div>
-              <div className="bg-gray-50 p-2 rounded">
-                <div className="font-medium text-gray-700">
+              <div className="bg-[#2a2520] p-2 rounded">
+                <div className="font-medium text-white/70">
                   Eliminated Agents
                 </div>
-                <div className="text-lg font-bold text-orange-600">
+                <div className="text-xl font-bold text-amber-500">
                   {gameState?.eliminated_agents?.length || 0}
                 </div>
               </div>

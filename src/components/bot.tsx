@@ -48,8 +48,7 @@ export class SpriteBot {
     ];
     this.color = colors[index % colors.length];
 
-    this.spriteSheetPath =
-      spriteSheetPath || this.getSpriteSheetPath(name);
+    this.spriteSheetPath = spriteSheetPath || this.getSpriteSheetPath(name);
 
     this.loadSpriteSheet();
   }
@@ -58,7 +57,7 @@ export class SpriteBot {
     const spriteMapping: { [key: string]: string } = {
       agent_Alice: '/sprite.png',
       agent_Bob: '/sprite.png',
-      agent_Cindy: '/sprite.png',
+      agent_Charlie: '/sprite.png',
       agent_Dom: '/sprite.png',
       agent_Elise: '/sprite.png ',
     };

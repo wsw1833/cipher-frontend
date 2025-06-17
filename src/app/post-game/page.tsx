@@ -18,12 +18,10 @@ import {
   Home,
   RotateCcw,
   MessageSquare,
-  TrendingUp,
-  User,
   Clock,
   Target,
   Hash,
-  Brain,
+  User,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import PostGameSkeleton from '@/components/skeletonLoading';
@@ -32,11 +30,20 @@ import {
   getConversationHistory,
   getKeywords,
 } from '@/actions/post-game-analysis';
+import Image from 'next/image';
+import beerMug from '@images/beer-mug.svg';
+import helmet from '@images/helmet.svg';
+import werewolf from '@images/werewolf.svg';
+import dead from '@images/dead.svg';
+import love from '@images/love.svg';
+import { checkGameState } from '@/actions/game-phase';
+import { createGame } from '@/actions/create-game';
 
 interface Message {
   speaker: string;
   message: string;
   type?: 'voting_result' | 'vote' | 'analysis';
+  timestamp: string;
 }
 
 interface Conversation {
@@ -56,6 +63,18 @@ interface GameData {
   conversation: Conversation[];
   personas: Persona[];
   keywords: Array<string>;
+  gameStates: GameState;
+}
+
+interface GameState {
+  game_id: string;
+  status: string;
+  current_round: number;
+  current_phase: string;
+  remaining_agents: string[];
+  eliminated_agents: string[];
+  werewolf: string;
+  result: string;
 }
 
 export default function PostGamePage() {
@@ -65,10 +84,77 @@ export default function PostGamePage() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<GameData | null>(null);
 
+  const FilteredSelectedCharacterMessages = () => {
+    if (!data?.conversation || !data?.personas[selectedCharacter]) return null;
+
+    const selectedCharacterName = data.personas[selectedCharacter].agent_name;
+
+    // Filter messages that involve the selected character (either as speaker or mentioned)
+    const characterMessages = data.conversation.flatMap((conv) =>
+      getFilteredMessages(conv.messages)
+        .filter(
+          (msg) =>
+            msg.speaker === selectedCharacterName ||
+            msg.message
+              .toLowerCase()
+              .includes(selectedCharacterName.toLowerCase())
+        )
+        .map((msg) => ({
+          ...msg,
+          round: conv.round,
+          phase: conv.phase,
+        }))
+    );
+
+    if (characterMessages.length === 0) {
+      return (
+        <div className="text-center text-white/70 py-8">
+          <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
+          <p>No conversations found for {selectedCharacterName}</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-3">
+        {characterMessages.map((entry, index) => (
+          <div key={index} className="flex flex-col gap-1">
+            <div className="flex items-center gap-2 p-3 text-sm text-white/70 rounded-[6px] bg-[#2a2520]">
+              <Clock className="h-3 w-3" />
+              Round {entry.round} : {entry.phase} - {entry.speaker}
+              {entry.speaker === selectedCharacterName && (
+                <Badge
+                  variant="secondary"
+                  className="text-xs bg-amber-500/20 text-amber-400 border-amber-500/30"
+                >
+                  Speaking
+                </Badge>
+              )}
+              {entry.speaker !== selectedCharacterName && (
+                <Badge
+                  variant="secondary"
+                  className="text-xs bg-blue-500/20 text-blue-400 border-blue-500/30"
+                >
+                  Mentioned
+                </Badge>
+              )}
+            </div>
+            <p className="text-sm font-medium text-white p-3 rounded-[6px] bg-[#2a2520]">
+              {entry.message}
+            </p>
+            {index < characterMessages.length - 1 && (
+              <Separator className="my-2 bg-white/20" />
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   const getFilteredMessages = (messages: Message[]) => {
     return messages.filter(
       (msg) =>
-        !msg.type || // No type (undefined)
+        !msg.type || // No type (communication phase)
         msg.type === 'voting_result' ||
         msg.type === 'vote' ||
         msg.type === 'analysis'
@@ -90,12 +176,18 @@ export default function PostGamePage() {
       <div className="space-y-3">
         {Messages.map((entry, index) => (
           <div key={index} className="flex flex-col gap-1">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2 p-2 text-sm text-white/70 rounded-[6px] bg-[#2a2520]">
               <Clock className="h-3 w-3" />
+              {new Date(entry.timestamp).toLocaleTimeString()}
+              {' - '}
               Round {entry.round} : {entry.phase} - {entry.speaker}
             </div>
-            <p className="text-sm bg-muted p-2 rounded">{entry.message}</p>
-            {index < entry.message.length - 1 && <Separator className="my-2" />}
+            <p className="text-sm font-medium text-white p-2 rounded-[6px] bg-[#2a2520]">
+              {entry.message}
+            </p>
+            {index < entry.message.length - 1 && (
+              <Separator className="my-2 bg-white/20" />
+            )}
           </div>
         ))}
       </div>
@@ -108,9 +200,25 @@ export default function PostGamePage() {
     return fourthWord.replace(/[.,;:!?]$/, '');
   };
 
-  const handleRedirect = (direct: string) => {
+  const handleRedirect = async (direct: string) => {
     if (direct === 'game') {
-      router.push('/game');
+      try {
+        // Check if API response indicates success
+        const data = await createGame();
+        if (data.game_id) {
+          console.log('Game started successfully:', data.game_id);
+          localStorage.setItem('gameID', data.game_id);
+          // Route to game page on success
+          router.push('/game');
+        } else {
+          console.error('Game start failed:', data.message);
+          // Handle API error response
+          alert('Failed to start game. Please try again.');
+        }
+      } catch (error) {
+        console.error('Error starting game:', error);
+        alert('Network error. Please check your connection and try again.');
+      }
     } else {
       router.push('/');
     }
@@ -128,17 +236,20 @@ export default function PostGamePage() {
         }
 
         // Wait for all API calls to complete
-        const [conversation, personas, keywords] = await Promise.all([
-          getConversationHistory(gameID),
-          getAgentPersonas(gameID),
-          getKeywords(gameID),
-        ]);
+        const [conversation, personas, keywords, gameStates] =
+          await Promise.all([
+            getConversationHistory(gameID),
+            getAgentPersonas(gameID),
+            getKeywords(gameID),
+            checkGameState(gameID),
+          ]);
 
         // Set all data at once
         setData({
           conversation,
           personas,
           keywords,
+          gameStates,
         });
       } catch (error) {
         console.log('error fetching data from APIs', error);
@@ -155,30 +266,37 @@ export default function PostGamePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#15130A]">
       {/* Header */}
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <h1 className="text-2xl font-bold">CipherWolves</h1>
-              <h1 className="text-2xl font-bold">Post-Game Analysis</h1>
-              <Badge variant="secondary" className="flex items-center gap-1">
+      <header className="bg-[#15130A] shadow-xl shadow-[#FF990050]">
+        <div className="container mx-auto px-4 py-5">
+          <div className="flex flex-col sm:flex-row items-center sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4 text-white">
+              <Image src={beerMug} alt="logo" className="w-8 h-8" />
+              <h1 className="text-2xl font-bold md:display hidden">
+                CipherWolves
+              </h1>
+              <h1 className="text-xl font-bold">Post-Game Analysis</h1>
+              <Badge
+                variant="secondary"
+                className="flex items-center gap-1 bg-[#ffb300]"
+              >
                 <Target className="h-3 w-3" />
                 Keywords: 300
               </Badge>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-4">
               <Button
                 variant="outline"
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 shadow-[4.0px_4.0px_0.0px_rgba(0,0,0,0.38)] hover:scale-103 transition-all duration-300 transform hover:shadow-[#ffb300]"
                 onClick={() => handleRedirect('game')}
               >
                 <RotateCcw className="h-4 w-4" />
                 New Game
               </Button>
               <Button
-                className="flex items-center gap-2"
+                variant="outline"
+                className="flex items-center gap-2 shadow-[4.0px_4.0px_0.0px_rgba(0,0,0,0.38)] hover:scale-103 transition-all duration-300 transform hover:shadow-[#ffb300]"
                 onClick={() => handleRedirect('home')}
               >
                 <Home className="h-4 w-4" />
@@ -189,18 +307,18 @@ export default function PostGamePage() {
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto px-4 py-10">
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Left Sidebar - Full Conversation Log & Keywords */}
           <div className="lg:col-span-2 space-y-6">
             {/* Keywords Section */}
-            <Card>
+            <Card className="shadow-[0_2px_8px_rgb(0,0,0,0.2)] shadow-[#FF990050] border-0 bg-[#1a1810] text-white">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="text-lg flex items-center gap-2 tex-white">
                   <Hash className="h-5 w-5" />
                   Game Keywords
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-white/70">
                   All 300 keywords from the game session
                 </CardDescription>
               </CardHeader>
@@ -208,7 +326,11 @@ export default function PostGamePage() {
                 <ScrollArea className="h-80">
                   <div className="flex flex-wrap gap-1">
                     {data?.keywords.map((keyword, index) => (
-                      <Badge key={index} variant="outline" className="text-xs">
+                      <Badge
+                        key={index}
+                        variant="outline"
+                        className="text-xs shadow-sm border-white/20 hover:bg-white/10 text-white transition-all border-2 hover:shadow-amber-500/60 hover:border-[#ffb300]"
+                      >
                         {keyword}
                       </Badge>
                     ))}
@@ -218,16 +340,18 @@ export default function PostGamePage() {
             </Card>
 
             {/* Full Conversation Log */}
-            <Card>
+            <Card className="shadow-[0_2px_8px_rgb(0,0,0,0.2)] shadow-[#FF990050] border-0 bg-[#1a1810]">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="text-lg text-white flex items-center gap-2">
                   <MessageSquare className="h-5 w-5" />
                   Full Game Log
                 </CardTitle>
-                <CardDescription>Complete conversation history</CardDescription>
+                <CardDescription className="text-white/70">
+                  Complete conversation history
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[600px]">
+                <ScrollArea className="h-[600px] text-black bg-[#1a1810]">
                   {FilteredMessages()}
                 </ScrollArea>
               </CardContent>
@@ -235,11 +359,11 @@ export default function PostGamePage() {
           </div>
 
           {/* Main Content - Character Analysis */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3 text-white">
             <div className="space-y-6">
               <div>
                 <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                  <User className="h-5 w-5" />
+                  <User className="w-5 h-5" />
                   Character Analysis
                 </h2>
 
@@ -248,9 +372,9 @@ export default function PostGamePage() {
                   {data?.personas.map((persona, index) => (
                     <Card
                       key={persona.agent_name}
-                      className={`cursor-pointer transition-all hover:shadow-amber-400/40 ${
+                      className={`cursor-pointer transition-all shadow-md border-2 hover:shadow-amber-400/60 hover:border-[#ffb300] bg-[#1a1810]${
                         selectedCharacter === index
-                          ? 'ring-2 ring-amber-500'
+                          ? 'border-2 border-amber-500/80'
                           : ''
                       }`}
                       onClick={() => setSelectedCharacter(index)}
@@ -269,16 +393,28 @@ export default function PostGamePage() {
                                 .join('')}
                             </AvatarFallback>
                           </Avatar>
-                          <div>
+                          <div className="text-white">
                             <p className="font-medium text-sm">
                               {persona.agent_name}
                             </p>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-xs text-white/60">
                               {getPersonaRole(persona)}
                             </p>
                           </div>
-                          <div className="flex items-center gap-1 text-xs">
-                            <MessageSquare className="h-3 w-3" />
+                          <div className="flex items-center gap-1 text-xs text-white">
+                            {persona.is_werewolf ? (
+                              <Image
+                                src={werewolf}
+                                alt="werewolf"
+                                className="w-4 h-4"
+                              />
+                            ) : (
+                              <Image
+                                src={helmet}
+                                alt="villager"
+                                className="w-4 h-4 text-white"
+                              />
+                            )}
                             {persona.is_werewolf ? 'WereWolf' : 'Villager'}
                           </div>
                         </div>
@@ -290,7 +426,7 @@ export default function PostGamePage() {
 
               {/* Selected Character Details */}
 
-              <Card>
+              <Card className="shadow-[0_2px_8px_rgb(0,0,0,0.2)] shadow-[#FF990050] border-0 bg-[#1a1810]">
                 <CardHeader>
                   <div className="flex items-center gap-3">
                     <Avatar className="h-12 w-12">
@@ -306,10 +442,10 @@ export default function PostGamePage() {
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <CardTitle>
+                      <CardTitle className="text-white">
                         {data?.personas[selectedCharacter]?.agent_name}
                       </CardTitle>
-                      <CardDescription>
+                      <CardDescription className="text-white">
                         {data?.personas[selectedCharacter] &&
                           getPersonaRole(data.personas[selectedCharacter])}
                       </CardDescription>
@@ -318,95 +454,91 @@ export default function PostGamePage() {
                 </CardHeader>
                 <CardContent>
                   <Tabs defaultValue="personas" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="personas">
+                    <TabsList className="grid w-full grid-cols-2 bg-white/10 ">
+                      <TabsTrigger
+                        value="personas"
+                        className="text-white data-[state=active]:bg-[#ffb300] data-[state=active]:text-black"
+                      >
                         Personas & Analysis
                       </TabsTrigger>
-                      <TabsTrigger value="conversations">
+                      <TabsTrigger
+                        value="conversations"
+                        className="text-white data-[state=active]:bg-[#ffb300] data-[state=active]:text-black"
+                      >
                         Conversations
                       </TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="personas" className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="text-center p-3 bg-muted rounded-lg">
-                          <div className="text-2xl font-bold text-blue-600">
+                        <div className="text-center p-3 bg-[#2a2520] rounded-lg flex flex-col items-center justify-center">
+                          <div className="text-2xl font-bold text-amber-500">
                             {data?.personas[selectedCharacter] &&
                               getPersonaRole(data.personas[selectedCharacter])}
                           </div>
-                          <div className="text-xs text-muted-foreground">
-                            Persona
-                          </div>
+                          <div className="text-sm text-white/70">Persona</div>
                         </div>
-                        <div className="text-center p-3 bg-muted rounded-lg">
-                          <div className="text-2xl font-bold text-primary">
+                        <div className="text-center p-3 bg-[#2a2520] rounded-lg flex flex-col items-center justify-center">
+                          <div className="text-2xl font-bold text-white">
                             {data?.personas[selectedCharacter].is_werewolf
-                              ? 'Yes'
-                              : 'No'}
+                              ? 'Werewolf'
+                              : 'Villager'}
                           </div>
-                          <div className="text-xs text-muted-foreground">
-                            Survived?
-                          </div>
+                          <div className="text-sm text-white/70">Role</div>
                         </div>
-                        <div className="text-center p-3 bg-muted rounded-lg">
-                          <div className="text-2xl font-bold text-green-600">
-                            {/* final trust level */}
-                            {/* {characters[selectedCharacter].trustLevel}% */}
+                        <div className="text-center p-3 bg-[#2a2520] rounded-lg flex flex-col justify-center items-center">
+                          <div className="text-2xl font-bold text-white flex items-center">
+                            {data?.gameStates.remaining_agents.includes(
+                              data?.personas[selectedCharacter].agent_name
+                            ) ? (
+                              <Image
+                                src={love}
+                                alt="love"
+                                className="w-10 h-10"
+                              />
+                            ) : (
+                              <Image
+                                src={dead}
+                                alt="dead"
+                                className="w-10 h-10"
+                              />
+                            )}
                           </div>
-                          <div className="text-xs text-muted-foreground">
-                            Trust Level
-                          </div>
+                          <div className="text-sm text-white/70">Survived?</div>
                         </div>
                       </div>
 
-                      <div>
-                        <h4 className="font-semibold flex mb-2">
+                      <div className="">
+                        <h4 className="font-semibold flex mb-2 text-white">
                           Personality Traits
                         </h4>
-                        <p className="text-sm text-muted-foreground mb-2">
+                        <p className="text-sm text-white/70 mb-2">
                           {data?.personas[selectedCharacter].description}
                         </p>
                       </div>
 
-                      <div>
-                        <h4 className="font-semibold mb-2">
+                      <div className="">
+                        <h4 className="font-semibold flex mb-2 text-white">
                           Instruction Summary
                         </h4>
-                        <p className="text-sm flex items-start mb-2">
+                        <p className="text-sm text-white/70 mb-2">
                           {data?.personas[selectedCharacter].instruction}
                         </p>
                       </div>
                     </TabsContent>
 
-                    {/* <TabsContent value="conversations" className="space-y-4">
-                      <div className="flex items-center gap-2 mb-4">
+                    <TabsContent value="conversations" className="space-y-4">
+                      <div className="flex items-center gap-2 my-4 text-white">
                         <MessageSquare className="h-5 w-5" />
                         <h4 className="font-semibold">
-                          Individual Conversation Log
+                          {data?.personas[selectedCharacter]?.agent_name}'s
+                          Conversation Log
                         </h4>
                       </div>
                       <ScrollArea className="h-[500px]">
-                        <div className="space-y-3">
-                          {characters[
-                            selectedCharacter
-                          ].individualConversations.map((entry, index) => (
-                            <div key={index} className="flex flex-col gap-1">
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <Clock className="h-3 w-3" />
-                                {entry.time} - {entry.speaker}
-                              </div>
-                              <p className="text-sm bg-muted p-2 rounded">
-                                {entry.message}
-                              </p>
-                              {index <
-                                characters[selectedCharacter]
-                                  .individualConversations.length -
-                                  1 && <Separator className="my-2" />}
-                            </div>
-                          ))}
-                        </div>
+                        <FilteredSelectedCharacterMessages />
                       </ScrollArea>
-                    </TabsContent> */}
+                    </TabsContent>
                   </Tabs>
                 </CardContent>
               </Card>

@@ -22,20 +22,26 @@ import {
   Clock,
   Target,
   Hash,
-  Brain,
 } from 'lucide-react';
+import Image from 'next/image';
+import beerMug from '@images/beer-mug.svg';
 
 export default function PostGameSkeleton() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen" style={{ backgroundColor: '#15130A' }}>
       {/* Header */}
-      <header className="border-b bg-card">
+      <header
+        className="shadow-lg shadow-[#FF990050]"
+        style={{ backgroundColor: '#1a1810' }}
+      >
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 text-white">
+              <Image src={beerMug} alt="logo" className="w-8 h-8" />
+
               <h1 className="text-2xl font-bold">CipherWolves</h1>
-              <h1 className="text-2xl font-bold">Post-Game Analysis</h1>
-              <Badge variant="secondary" className="flex items-center gap-1">
+              <h1 className="text-xl font-bold">Post-Game Analysis</h1>
+              <Badge className="flex items-center gap-1 bg-[#ffb300] text-black">
                 <Target className="h-3 w-3" />
                 Keywords: 300
               </Badge>
@@ -43,13 +49,17 @@ export default function PostGameSkeleton() {
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 border-white/20 text-white"
                 disabled
               >
                 <RotateCcw className="h-4 w-4" />
                 New Game
               </Button>
-              <Button className="flex items-center gap-2" disabled>
+              <Button
+                className="flex items-center gap-2 text-black"
+                style={{ backgroundColor: '#ffb300' }}
+                disabled
+              >
                 <Home className="h-4 w-4" />
                 Return to Landing
               </Button>
@@ -63,13 +73,16 @@ export default function PostGameSkeleton() {
           {/* Left Sidebar - Full Conversation Log & Keywords */}
           <div className="lg:col-span-2 space-y-6">
             {/* Keywords Section */}
-            <Card>
+            <Card
+              className="shadow-[0_2px_8px_rgb(0,0,0,0.2)] shadow-[#FF990050] border-0 bg-[#1a1810] text-white"
+              style={{ backgroundColor: '#1a1810' }}
+            >
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-white">
                   <Hash className="h-5 w-5" />
                   Game Keywords
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-white/70">
                   All 300 keywords from the game session
                 </CardDescription>
               </CardHeader>
@@ -80,7 +93,7 @@ export default function PostGameSkeleton() {
                     {Array.from({ length: 50 }).map((_, index) => (
                       <Skeleton
                         key={index}
-                        className="h-6 rounded-full"
+                        className="h-6 rounded-full bg-white/20"
                         style={{ width: `${Math.random() * 60 + 40}px` }}
                       />
                     ))}
@@ -90,13 +103,18 @@ export default function PostGameSkeleton() {
             </Card>
 
             {/* Full Conversation Log */}
-            <Card>
+            <Card
+              className="shadow-[0_2px_8px_rgb(0,0,0,0.2)] shadow-[#FF990050] border-0 bg-[#1a1810] text-white"
+              style={{ backgroundColor: '#1a1810' }}
+            >
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-white">
                   <MessageSquare className="h-5 w-5" />
                   Full Game Log
                 </CardTitle>
-                <CardDescription>Complete conversation history</CardDescription>
+                <CardDescription className="text-white/70">
+                  Complete conversation history
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <ScrollArea className="h-[600px]">
@@ -104,15 +122,17 @@ export default function PostGameSkeleton() {
                     {/* Skeleton Conversation Messages */}
                     {Array.from({ length: 15 }).map((_, index) => (
                       <div key={index} className="flex flex-col gap-1">
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-2 text-xs text-white/60">
                           <Clock className="h-3 w-3" />
-                          <Skeleton className="h-3 w-20" />
+                          <Skeleton className="h-3 w-20 bg-white/20" />
                         </div>
                         <Skeleton
-                          className="h-12 rounded"
+                          className="h-12 rounded bg-white/20"
                           style={{ width: `${Math.random() * 40 + 60}%` }}
                         />
-                        {index < 14 && <Separator className="my-2" />}
+                        {index < 14 && (
+                          <Separator className="my-2 bg-white/20" />
+                        )}
                       </div>
                     ))}
                   </div>
@@ -125,7 +145,7 @@ export default function PostGameSkeleton() {
           <div className="lg:col-span-3">
             <div className="space-y-6">
               <div>
-                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-white">
                   <User className="h-5 w-5" />
                   Character Analysis
                 </h2>
@@ -135,22 +155,23 @@ export default function PostGameSkeleton() {
                   {Array.from({ length: 5 }).map((_, index) => (
                     <Card
                       key={index}
-                      className="cursor-pointer transition-all hover:shadow-md"
+                      className="cursor-pointer transition-all hover:shadow-md border-white/20"
+                      style={{ backgroundColor: '#1a1810' }}
                     >
                       <CardContent className="p-3">
                         <div className="flex flex-col items-center text-center gap-2">
                           <Avatar className="h-12 w-12">
-                            <AvatarFallback>
-                              <Skeleton className="h-12 w-12 rounded-full" />
+                            <AvatarFallback className="bg-white/10">
+                              <Skeleton className="h-12 w-12 rounded-full bg-white/20" />
                             </AvatarFallback>
                           </Avatar>
                           <div className="w-full">
-                            <Skeleton className="h-4 w-full mb-1" />
-                            <Skeleton className="h-3 w-16 mx-auto" />
+                            <Skeleton className="h-4 w-full mb-1 bg-white/20" />
+                            <Skeleton className="h-3 w-16 mx-auto bg-white/20" />
                           </div>
                           <div className="flex items-center gap-1 text-xs">
-                            <MessageSquare className="h-3 w-3" />
-                            <Skeleton className="h-3 w-6" />
+                            <MessageSquare className="h-3 w-3 text-white/60" />
+                            <Skeleton className="h-3 w-6 bg-white/20" />
                           </div>
                         </div>
                       </CardContent>
@@ -160,83 +181,52 @@ export default function PostGameSkeleton() {
               </div>
 
               {/* Selected Character Details Skeleton */}
-              <Card>
+              <Card
+                className="shadow-[0_2px_8px_rgb(0,0,0,0.2)] shadow-[#FF990050] border-0 bg-[#1a1810] text-white"
+                style={{ backgroundColor: '#1a1810' }}
+              >
                 <CardHeader>
                   <div className="flex items-center gap-3">
                     <Avatar className="h-12 w-12">
-                      <AvatarFallback>
-                        <Skeleton className="h-12 w-12 rounded-full" />
+                      <AvatarFallback className="bg-white/10">
+                        <Skeleton className="h-12 w-12 rounded-full bg-white/20" />
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <Skeleton className="h-6 w-32 mb-2" />
-                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-6 w-32 mb-2 bg-white/20" />
+                      <Skeleton className="h-4 w-24 bg-white/20" />
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent>
                   <Tabs defaultValue="personas" className="w-full">
-                    <TabsList className="grid w-full grid-cols-3">
-                      <TabsTrigger value="personas">
+                    <TabsList className="grid w-full grid-cols-2 bg-white/10">
+                      <TabsTrigger
+                        value="personas"
+                        className="text-white data-[state=active]:bg-[#ffb300] data-[state=active]:text-black"
+                      >
                         Personas & Analysis
                       </TabsTrigger>
-                      <TabsTrigger value="conversations">
+                      <TabsTrigger
+                        value="conversations"
+                        className="text-white data-[state=active]:bg-[#ffb300] data-[state=active]:text-black"
+                      >
                         Conversations
                       </TabsTrigger>
                     </TabsList>
 
-                    <TabsContent value="analysis" className="space-y-4">
-                      {/* Metrics Skeleton */}
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {Array.from({ length: 3 }).map((_, index) => (
-                          <div
-                            key={index}
-                            className="text-center p-3 bg-muted rounded-lg"
-                          >
-                            <Skeleton className="h-8 w-12 mx-auto mb-2" />
-                            <Skeleton className="h-3 w-20 mx-auto" />
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Personality Traits Skeleton */}
-                      <div>
-                        <Skeleton className="h-5 w-32 mb-2" />
-                        <Skeleton className="h-4 w-full" />
-                      </div>
-
-                      {/* Key Insights Skeleton */}
-                      <div>
-                        <Skeleton className="h-5 w-24 mb-2" />
-                        <div className="space-y-1">
-                          {Array.from({ length: 3 }).map((_, index) => (
-                            <div key={index} className="flex items-start gap-2">
-                              <span className="text-primary">•</span>
-                              <Skeleton className="h-4 flex-1" />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Analysis Summary Skeleton */}
-                      <div>
-                        <Skeleton className="h-5 w-32 mb-2" />
-                        <div className="space-y-2">
-                          <Skeleton className="h-4 w-full" />
-                          <Skeleton className="h-4 w-4/5" />
-                        </div>
-                      </div>
-                    </TabsContent>
-
                     <TabsContent value="personas" className="space-y-4">
                       <div className="flex items-center gap-2 mb-4">
-                        <Brain className="h-5 w-5" />
-                        <Skeleton className="h-5 w-36" />
+                        <Skeleton className="h-5 w-36 bg-white/20" />
                       </div>
                       <div className="grid gap-3">
                         {Array.from({ length: 4 }).map((_, index) => (
-                          <Card key={index} className="p-4">
-                            <Skeleton className="h-4 w-full" />
+                          <Card
+                            key={index}
+                            className="p-4 border-white/20"
+                            style={{ backgroundColor: '#2a2520' }}
+                          >
+                            <Skeleton className="h-4 w-full bg-white/20" />
                           </Card>
                         ))}
                       </div>
@@ -244,22 +234,24 @@ export default function PostGameSkeleton() {
 
                     <TabsContent value="conversations" className="space-y-4">
                       <div className="flex items-center gap-2 mb-4">
-                        <MessageSquare className="h-5 w-5" />
-                        <Skeleton className="h-5 w-48" />
+                        <MessageSquare className="h-5 w-5 text-white" />
+                        <Skeleton className="h-5 w-48 bg-white/20" />
                       </div>
                       <ScrollArea className="h-[500px]">
                         <div className="space-y-3">
                           {Array.from({ length: 8 }).map((_, index) => (
                             <div key={index} className="flex flex-col gap-1">
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <div className="flex items-center gap-2 text-xs text-white/60">
                                 <Clock className="h-3 w-3" />
-                                <Skeleton className="h-3 w-16" />
+                                <Skeleton className="h-3 w-16 bg-white/20" />
                               </div>
                               <Skeleton
-                                className="h-10 rounded"
+                                className="h-10 rounded bg-white/20"
                                 style={{ width: `${Math.random() * 30 + 70}%` }}
                               />
-                              {index < 7 && <Separator className="my-2" />}
+                              {index < 7 && (
+                                <Separator className="my-2 bg-white/20" />
+                              )}
                             </div>
                           ))}
                         </div>
