@@ -26,7 +26,7 @@ import {
   Brain,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { SkeletonCard } from '@/components/skeletonLoading';
+import PostGameSkeleton from '@/components/skeletonLoading';
 import {
   getAgentPersonas,
   getConversationHistory,
@@ -151,12 +151,7 @@ export default function PostGamePage() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="max-w-2xl mx-auto mt-8">
-        <h2 className="text-2xl font-bold mb-4">Loading...</h2>
-        <SkeletonCard />
-      </div>
-    );
+    return <PostGameSkeleton />;
   }
 
   return (
@@ -253,8 +248,10 @@ export default function PostGamePage() {
                   {data?.personas.map((persona, index) => (
                     <Card
                       key={persona.agent_name}
-                      className={`cursor-pointer transition-all hover:shadow-md ${
-                        selectedCharacter === index ? 'ring-2 ring-primary' : ''
+                      className={`cursor-pointer transition-all hover:shadow-amber-400/40 ${
+                        selectedCharacter === index
+                          ? 'ring-2 ring-amber-500'
+                          : ''
                       }`}
                       onClick={() => setSelectedCharacter(index)}
                     >
@@ -282,7 +279,7 @@ export default function PostGamePage() {
                           </div>
                           <div className="flex items-center gap-1 text-xs">
                             <MessageSquare className="h-3 w-3" />
-                            {persona.is_werewolf}
+                            {persona.is_werewolf ? 'WereWolf' : 'Villager'}
                           </div>
                         </div>
                       </CardContent>
@@ -338,7 +335,7 @@ export default function PostGamePage() {
                               getPersonaRole(data.personas[selectedCharacter])}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            Persona & Traits
+                            Persona
                           </div>
                         </div>
                         <div className="text-center p-3 bg-muted rounded-lg">
@@ -348,7 +345,7 @@ export default function PostGamePage() {
                               : 'No'}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            WereWolf
+                            Survived?
                           </div>
                         </div>
                         <div className="text-center p-3 bg-muted rounded-lg">
