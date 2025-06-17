@@ -6,6 +6,7 @@ import Sword from '@images/sword.svg';
 import Torch from '@images/torch.png';
 import Key from '@images/medieval-key.svg';
 import PersonaCard from '@/components/personasCard';
+import emotional from '@images/emotional.png';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { createGame } from '@/actions/create-game';
@@ -119,10 +120,10 @@ export default function Home() {
           </div>
         </div>
         <div className="grid-cols-2 w-[50rem] h-full justify-center gap-6 text-white text-xl lg:grid hidden">
-          <span className="col-span-1 bg-[url('/codebook.png')] lg:bg-cover bg-auto bg-center w-full h-full rounded-[12px] opacity-85 drop-shadow-orange-900/60 drop-shadow-md" />
-          <span className="col-span-1 bg-[url('/deception.png')] lg:bg-cover bg-auto bg-center w-full h-full rounded-[12px] opacity-85 drop-shadow-orange-900/60 drop-shadow-md" />
-          <span className="col-span-1 bg-[url('/bg-game.png')] bg-cover w-full h-full rounded-[12px] opacity-85 drop-shadow-orange-900/60 drop-shadow-md" />
-          <span className="col-span-1 bg-[url('/bg-game.png')] bg-cover w-full h-full rounded-[12px] opacity-85 drop-shadow-orange-900/60 drop-shadow-md" />
+          <span className="col-span-1 bg-[url('/codebook.png')] lg:bg-cover bg-auto bg-center w-full h-full rounded-[12px] opacity-85 drop-shadow-orange-400/80 drop-shadow-md" />
+          <span className="col-span-1 bg-[url('/deception.png')] lg:bg-cover bg-auto bg-center w-full h-full rounded-[12px] opacity-85 drop-shadow-orange-400/80 drop-shadow-md" />
+          <span className="col-span-1 bg-[url('/emotional.png')] lg:bg-cover bg-auto bg-center w-full h-full rounded-[12px] opacity-85 drop-shadow-orange-400/80 drop-shadow-md" />
+          <span className="col-span-1 bg-[url('/bg-game.png')] bg-cover w-full h-full rounded-[12px] opacity-85 drop-shadow-orange-400/80 drop-shadow-md" />
         </div>
       </section>
       <section className="flex flex-row w-screen h-[5rem]">
@@ -138,7 +139,7 @@ export default function Home() {
           <PersonaCard />
         </div>
       </section>
-      <section className="relative w-screen h-[10rem] bg-[#262012] brightness-[0.8] overflow-hidden flex items-center justify-center">
+      <section className="relative w-screen h-[7rem] bg-[#262012] brightness-[0.8] overflow-hidden flex items-center justify-center">
         <span className="text-white font-bold text-3xl">CipherWolves</span>
       </section>
     </main>
