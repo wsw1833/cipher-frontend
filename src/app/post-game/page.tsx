@@ -38,6 +38,11 @@ import dead from '@images/dead.svg';
 import love from '@images/love.svg';
 import { checkGameState } from '@/actions/game-phase';
 import { createGame } from '@/actions/create-game';
+import alice from '@images/alice_icon.svg';
+import bob from '@images/bob_icon.svg';
+import charlie from '@images/charlie_icon.svg';
+import dom from '@images/dom_icon.svg';
+import elise from '@images/elise_icon.svg';
 
 interface Message {
   speaker: string;
@@ -83,6 +88,8 @@ export default function PostGamePage() {
 
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<GameData | null>(null);
+
+  const spriteIcon = [alice, bob, charlie, dom, elise];
 
   const FilteredSelectedCharacterMessages = () => {
     if (!data?.conversation || !data?.personas[selectedCharacter]) return null;
@@ -383,7 +390,7 @@ export default function PostGamePage() {
                         <div className="flex flex-col items-center text-center gap-2">
                           <Avatar className="h-12 w-12">
                             <AvatarImage
-                              src={'/placeholder.svg'}
+                              src={spriteIcon[index]}
                               alt={persona.agent_name}
                             />
                             <AvatarFallback>

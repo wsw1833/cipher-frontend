@@ -14,16 +14,16 @@ export class SpriteBot {
   private spriteSheetPath: string;
 
   // Sprite sheet configuration for your layout
-  private readonly SPRITE_FRAME_WIDTH = 34;
-  private readonly SPRITE_FRAME_HEIGHT = 54;
-  private readonly FRAMES_PER_DIRECTION = 4;
+  private readonly SPRITE_FRAME_WIDTH = 64;
+  private readonly SPRITE_FRAME_HEIGHT = 64;
+  private readonly FRAMES_PER_DIRECTION = 9;
 
-  // Direction mapping to sprite sheet rows (down, left, right, up)
+  // Direction mapping to sprite sheet rows (up, left, down, right)
   private readonly DIRECTION_ROWS = {
-    down: 0,
-    right: 1,
-    left: 2,
-    up: 3,
+    up: 0,
+    left: 1,
+    down: 2,
+    right: 3,
   };
 
   constructor(
@@ -36,16 +36,7 @@ export class SpriteBot {
     this.name = name;
 
     // Assign unique colors for name tags and UI elements
-    const colors = [
-      '#FF6B6B',
-      '#4ECDC4',
-      '#45B7D1',
-      '#96CEB4',
-      '#FFEAA7',
-      '#DDA0DD',
-      '#98FB98',
-      '#F0E68C',
-    ];
+    const colors = ['#F54DA8', '#832121', '#E21414', '#FFE050', '#8138FEFF'];
     this.color = colors[index % colors.length];
 
     this.spriteSheetPath = spriteSheetPath || this.getSpriteSheetPath(name);
@@ -55,11 +46,11 @@ export class SpriteBot {
 
   private getSpriteSheetPath(name: string): string {
     const spriteMapping: { [key: string]: string } = {
-      agent_Alice: '/sprite.png',
-      agent_Bob: '/sprite.png',
-      agent_Charlie: '/sprite.png',
-      agent_Dom: '/sprite.png',
-      agent_Elise: '/sprite.png ',
+      agent_Alice: '/sprites/alice.png',
+      agent_Bob: '/sprite/bob.png',
+      agent_Charlie: '/sprite/charlie.png',
+      agent_Dom: '/sprite/dom.png',
+      agent_Elise: '/sprite/elise.png ',
     };
 
     // Return specific sprite for the character, or fallback to index-based naming

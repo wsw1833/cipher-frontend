@@ -120,10 +120,10 @@ export default function Home() {
           </div>
         </div>
         <div className="grid-cols-2 w-[50rem] h-full justify-center gap-6 text-white text-xl lg:grid hidden">
-          <span className="col-span-1 bg-[url('/codebook.png')] lg:bg-cover bg-auto bg-center w-full h-full rounded-[12px] opacity-85 drop-shadow-orange-400/80 drop-shadow-md" />
+          <span className="col-span-1 bg-[url('/codebook.png')] lg:bg-cover bg-center w-full h-full rounded-[12px] opacity-85 drop-shadow-orange-400/80 drop-shadow-md" />
           <span className="col-span-1 bg-[url('/deception.png')] lg:bg-cover bg-auto bg-center w-full h-full rounded-[12px] opacity-85 drop-shadow-orange-400/80 drop-shadow-md" />
           <span className="col-span-1 bg-[url('/emotional.png')] lg:bg-cover bg-auto bg-center w-full h-full rounded-[12px] opacity-85 drop-shadow-orange-400/80 drop-shadow-md" />
-          <span className="col-span-1 bg-[url('/bg-game.png')] bg-cover w-full h-full rounded-[12px] opacity-85 drop-shadow-orange-400/80 drop-shadow-md" />
+          <span className="col-span-1 bg-[url('/interactive.png')] lg:bg-cover bg-auto bg-center w-full h-full rounded-[12px] opacity-85 drop-shadow-orange-400/80 drop-shadow-md" />
         </div>
       </section>
       <section className="flex flex-row w-screen h-[5rem]">

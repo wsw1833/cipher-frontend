@@ -62,14 +62,11 @@ interface CanvasDimensions {
 
 // Spawn points in walkable areas
 const SPAWN_POINTS = [
-  { x: 150, y: 400 }, // Bottom left area
-  { x: 450, y: 250 }, // Center area
-  { x: 700, y: 150 }, // Top right area
-  { x: 350, y: 520 }, // Bottom center
-  { x: 850, y: 350 }, // Right area
-  { x: 150, y: 200 }, // Top left
-  { x: 650, y: 500 }, // Bottom right
-  { x: 450, y: 100 }, // Top center
+  { x: 330, y: 250 }, // top left
+  { x: 800, y: 370 }, // left center pathway
+  { x: 100, y: 390 }, // right center pathway
+  { x: 500, y: 500 }, // center
+  { x: 700, y: 500 }, // center
 ];
 
 function getRandomInt(min: number, max: number) {
@@ -109,11 +106,11 @@ function isValidPosition(
 
 function getSpriteIconPath(name: string, index: number): string {
   const spriteMapping: { [key: string]: string } = {
-    agent_Alice: '/beer-mug.svg',
-    agent_Bob: '/beer-mug.svg',
-    agent_Charlie: '/beer-mug.svg',
-    agent_Dom: '/beer-mug.svg',
-    agent_Elise: '/beer-mug.svg',
+    agent_Alice: '/alice_icon.svg',
+    agent_Bob: '/bob_icon.svg',
+    agent_Charlie: '/charlie_icon.svg',
+    agent_Dom: '/dom_icon.svg',
+    agent_Elise: '/elise_icon.svg',
   };
 
   // Return specific sprite for the character, or fallback to index-based naming
@@ -123,8 +120,8 @@ function getSpriteIconPath(name: string, index: number): string {
 function getRandomDirection(): { x: number; y: number } {
   const directions = [
     { x: 0, y: -1 }, // up
-    { x: 0, y: 1 }, // down
     { x: -1, y: 0 }, // left
+    { x: 0, y: 1 }, // down
     { x: 1, y: 0 }, // right
   ];
   return directions[Math.floor(Math.random() * directions.length)];
@@ -184,7 +181,7 @@ const GamePage = () => {
           setBackgroundLoaded(true); // Continue even if background fails
         };
 
-        img.src = '/example.jpg';
+        img.src = '/map.png';
       } catch (error) {
         console.error('Error loading background image:', error);
         setBackgroundLoaded(true); // Continue even if background fails
@@ -357,11 +354,11 @@ const GamePage = () => {
       }
 
       const botConfigs = [
-        { name: 'agent_Alice', sprite: '/sprite.png' },
-        { name: 'agent_Bob', sprite: '/sprite.png' },
-        { name: 'agent_Charlie', sprite: '/sprite.png' },
-        { name: 'agent_Dom', sprite: '/sprite.png' },
-        { name: 'agent_Elise', sprite: '/sprite.png' },
+        { name: 'agent_Alice', sprite: '/sprites/alice.png' },
+        { name: 'agent_Bob', sprite: '/sprites/bob.png' },
+        { name: 'agent_Charlie', sprite: '/sprites/charlie.png' },
+        { name: 'agent_Dom', sprite: '/sprites/dom.png' },
+        { name: 'agent_Elise', sprite: '/sprites/elise.png' },
       ];
 
       botsRef.current = botConfigs.map(
@@ -681,7 +678,7 @@ const GamePage = () => {
                 CipherWolves
               </h1>
             </div>
-            <div className="text-xs font-medium text-black bg-[#ffb300] px-3 py-1 rounded-full">
+            <div className="text-xs font-medium text-black bg-[#ffb300] w-fit px-3 py-1 rounded-full">
               Scale: {canvasDimensions.scaleFactor.toFixed(2)}x
             </div>
           </div>
@@ -733,7 +730,7 @@ const GamePage = () => {
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <div
-                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center overflow-hidden ${
+                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center overflow-hidden ${
                         isEliminated ? 'border-gray-400' : 'border-gray-300'
                       }`}
                       style={{
@@ -741,14 +738,14 @@ const GamePage = () => {
                       }}
                     >
                       {isEliminated ? (
-                        <div className="w-6 h-6 bg-gray-300 rounded-full"></div>
+                        <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
                       ) : (
                         <NextImage
                           src={characterImagePath}
                           alt={`${bot.name} icon`}
                           width={6}
                           height={6}
-                          className="w-6 h-6 object-cover rounded-full"
+                          className="w-10 h-10 object-cover rounded-full"
                         />
                       )}
                     </div>

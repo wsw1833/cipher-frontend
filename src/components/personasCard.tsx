@@ -6,15 +6,15 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import codebook from '@images/codebook.png';
-
+import codebook from '@images/globe.svg';
+import magic from '@images/magician.png';
 const characters = [
   {
     id: 1,
     name: 'Deceiver',
     description:
       'Master the Mystical Arts. Wield powerful spells to turn the tide of battle.',
-    image: codebook,
+    image: magic,
   },
   {
     id: 2,
@@ -49,12 +49,12 @@ export default function PersonaCard() {
             className="bg-[#15130A]/60 backdrop-blur-sm border-[#262012]/50 overflow-hidden pt-6 pb-0"
           >
             <CardHeader className="pb-2">
-              <CardTitle className="text-center text-amber-100 text-lg font-bold">
+              <CardTitle className="text-center text-amber-100 md:text-xl text-lg font-bold">
                 {character.name}
               </CardTitle>
             </CardHeader>
             <CardContent className="flex justify-center">
-              <div className="relative w-38 h-38 md:w-72 md:h-72">
+              <div className="relative w-40 h-40 md:w-80 md:h-80">
                 <Image
                   src={character.image || '/placeholder.svg'}
                   alt={character.name}
