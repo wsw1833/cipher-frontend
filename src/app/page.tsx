@@ -111,7 +111,7 @@ export default function Home() {
           </ol>
           <div className="w-full flex justify-center lg:justify-start">
             <Button
-              className="bg-[#ffb300] hover:bg-[#FFC400FF] text-gray-900 hover:text-black font-semibold text-lg rounded-lg transition-all duration-300 transform hover:scale-108 shadow-[0_2.8px_2.2px_rgba(0,_0,_0,_0.034),_0_6.7px_5.3px_rgba(0,_0,_0,_0.048),_0_12.5px_10px_rgba(0,_0,_0,_0.06),_0_22.3px_17.9px_rgba(0,_0,_0,_0.072),_0_41.8px_33.4px_rgba(0,_0,_0,_0.086),_0_100px_80px_rgba(0,_0,_0,_0.12)] px-10 shadow-amber-500/30"
+              className="bg-[#ffb300] hover:bg-[#FFC400FF]  text-gray-900 hover:text-black font-semibold text-lg rounded-lg transition-all duration-300 transform hover:scale-108 shadow-[0_2.8px_2.2px_rgba(0,_0,_0,_0.034),_0_6.7px_5.3px_rgba(0,_0,_0,_0.048),_0_12.5px_10px_rgba(0,_0,_0,_0.06),_0_22.3px_17.9px_rgba(0,_0,_0,_0.072),_0_41.8px_33.4px_rgba(0,_0,_0,_0.086),_0_100px_80px_rgba(0,_0,_0,_0.12)] px-10 shadow-amber-500/30"
               onClick={handle}
             >
               Try Demo Now!
@@ -135,7 +135,7 @@ export default function Home() {
       </section>
       <section className="relative w-screen min-h-screen overflow-hidden flex items-center justify-center">
         <div className="bg-[url('/bg2.jpg')] absolute inset-0 bg-cover bg-center bg-no-repeat shadow-xl mask-t-from-70% mask-b-from-100% mask-b-to-transparent blur-[1.5px] brightness-[0.7]" />
-        <div className="flex items-center justify-center gap-6 text-white lg:mt-0 mt-20 ">
+        <div className="flex items-center justify-center gap-6 text-white lg:mt-10 mt-20 ">
           <PersonaCard />
         </div>
       </section>

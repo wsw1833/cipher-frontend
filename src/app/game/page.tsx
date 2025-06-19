@@ -148,7 +148,6 @@ const GamePage = () => {
   const [userInput, setUserInput] = useState<string>('');
   const [finalResult, setFinalResult] = useState<string | null>(null);
   const [gameState, setGameState] = useState<GameData | null>(null);
-  const [gameRound, setGameRound] = useState(1);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const router = useRouter();
 
@@ -592,6 +591,7 @@ const GamePage = () => {
       await startAnalysis(gameID, userInput);
       setUserInput('');
       setGameStatus('voting');
+      setSubmitting(false);
     } catch (error) {
       console.log('Analysis error:', error);
     }
@@ -641,10 +641,8 @@ const GamePage = () => {
             if (data && data.result !== null) {
               setFinalResult(data.result);
               terminateAllConnections();
-              setGameRound(0);
               router.push('/post-game');
             } else {
-              setGameRound((prev) => prev + 1); // Increment round
               setGameStatus('communication');
             }
             break;
@@ -881,7 +879,7 @@ const GamePage = () => {
               <div className="bg-[#2a2520] p-2 rounded">
                 <div className="font-medium text-white/70">Round</div>
                 <div className="text-xl font-bold text-amber-500">
-                  {gameRound}
+                  {gameState?.current_round || 0}
                 </div>
               </div>
               <div className="bg-[#2a2520] p-2 rounded">

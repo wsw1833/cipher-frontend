@@ -36,13 +36,9 @@ import helmet from '@images/helmet.svg';
 import werewolf from '@images/werewolf.svg';
 import dead from '@images/dead.svg';
 import love from '@images/love.svg';
-import { checkGameState } from '@/actions/game-phase';
+import { checkGameState, getDataMetrics } from '@/actions/game-phase';
 import { createGame } from '@/actions/create-game';
-import alice from '@images/alice_icon.svg';
-import bob from '@images/bob_icon.svg';
-import charlie from '@images/charlie_icon.svg';
-import dom from '@images/dom_icon.svg';
-import elise from '@images/elise_icon.svg';
+import GameChart, { MetricEntry } from '@/components/metricsChart';
 
 interface Message {
   speaker: string;
@@ -64,11 +60,12 @@ interface Persona {
   is_werewolf: boolean;
 }
 
-interface GameData {
+export interface GameData {
   conversation: Conversation[];
   personas: Persona[];
   keywords: Array<string>;
   gameStates: GameState;
+  metrics: MetricEntry[];
 }
 
 interface GameState {
@@ -89,7 +86,20 @@ export default function PostGamePage() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<GameData | null>(null);
 
-  const spriteIcon = [alice, bob, charlie, dom, elise];
+  const characterIconMap: { [key: string]: any } = {
+    agent_Alice: 'alice_icon.svg',
+    agent_Bob: 'bob_icon.svg',
+    agent_Charlie: 'charlie_icon.svg',
+    agent_Dom: 'dom_icon.svg',
+    agent_Elise: 'elise_icon.svg',
+  };
+
+  const getCharacterIcon = (persona: Persona | undefined) => {
+    if (!persona) {
+      return;
+    }
+    return characterIconMap[persona?.agent_name] || '/placeholder.svg';
+  };
 
   const FilteredSelectedCharacterMessages = () => {
     if (!data?.conversation || !data?.personas[selectedCharacter]) return null;
@@ -243,12 +253,13 @@ export default function PostGamePage() {
         }
 
         // Wait for all API calls to complete
-        const [conversation, personas, keywords, gameStates] =
+        const [conversation, personas, keywords, gameStates, metrics] =
           await Promise.all([
             getConversationHistory(gameID),
             getAgentPersonas(gameID),
             getKeywords(gameID),
             checkGameState(gameID),
+            getDataMetrics(gameID),
           ]);
 
         // Set all data at once
@@ -257,6 +268,7 @@ export default function PostGamePage() {
           personas,
           keywords,
           gameStates,
+          metrics,
         });
       } catch (error) {
         console.log('error fetching data from APIs', error);
@@ -388,21 +400,21 @@ export default function PostGamePage() {
                     >
                       <CardContent className="p-3">
                         <div className="flex flex-col items-center text-center gap-2">
-                          <Avatar className="h-12 w-12">
+                          <Avatar className="h-14 w-14">
                             <AvatarImage
-                              src={spriteIcon[index]}
+                              src={getCharacterIcon(persona)}
                               alt={persona.agent_name}
                             />
                             <AvatarFallback>
                               {persona.agent_name
-                                .split(' ')
+                                .split('')
                                 .map((n) => n[0])
                                 .join('')}
                             </AvatarFallback>
                           </Avatar>
                           <div className="text-white">
                             <p className="font-medium text-sm">
-                              {persona.agent_name}
+                              {persona.agent_name.split('_')[1]}
                             </p>
                             <p className="text-xs text-white/60">
                               {getPersonaRole(persona)}
@@ -436,9 +448,11 @@ export default function PostGamePage() {
               <Card className="shadow-[0_2px_8px_rgb(0,0,0,0.2)] shadow-[#FF990050] border-0 bg-[#1a1810]">
                 <CardHeader>
                   <div className="flex items-center gap-3">
-                    <Avatar className="h-12 w-12">
+                    <Avatar className="h-16 w-16">
                       <AvatarImage
-                        src={'/placeholder.svg'}
+                        src={getCharacterIcon(
+                          data?.personas[selectedCharacter]
+                        )}
                         alt={data?.personas[selectedCharacter]?.agent_name}
                       />
                       <AvatarFallback>
@@ -448,11 +462,15 @@ export default function PostGamePage() {
                           .join('')}
                       </AvatarFallback>
                     </Avatar>
-                    <div>
-                      <CardTitle className="text-white">
-                        {data?.personas[selectedCharacter]?.agent_name}
+                    <div className="space-y-3">
+                      <CardTitle className="text-white font-bold text-lg">
+                        {
+                          data?.personas[selectedCharacter]?.agent_name.split(
+                            '_'
+                          )[1]
+                        }
                       </CardTitle>
-                      <CardDescription className="text-white">
+                      <CardDescription className="text-white font-medium">
                         {data?.personas[selectedCharacter] &&
                           getPersonaRole(data.personas[selectedCharacter])}
                       </CardDescription>
@@ -461,7 +479,7 @@ export default function PostGamePage() {
                 </CardHeader>
                 <CardContent>
                   <Tabs defaultValue="personas" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 bg-white/10 ">
+                    <TabsList className="grid w-full grid-cols-3 bg-white/10 ">
                       <TabsTrigger
                         value="personas"
                         className="text-white data-[state=active]:bg-[#ffb300] data-[state=active]:text-black"
@@ -474,10 +492,16 @@ export default function PostGamePage() {
                       >
                         Conversations
                       </TabsTrigger>
+                      <TabsTrigger
+                        value="chart"
+                        className="text-white data-[state=active]:bg-[#ffb300] data-[state=active]:text-black"
+                      >
+                        Metrics
+                      </TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="personas" className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                         <div className="text-center p-3 bg-[#2a2520] rounded-lg flex flex-col items-center justify-center">
                           <div className="text-2xl font-bold text-amber-500">
                             {data?.personas[selectedCharacter] &&
@@ -515,7 +539,7 @@ export default function PostGamePage() {
                         </div>
                       </div>
 
-                      <div className="">
+                      <div>
                         <h4 className="font-semibold flex mb-2 text-white">
                           Personality Traits
                         </h4>
@@ -524,7 +548,7 @@ export default function PostGamePage() {
                         </p>
                       </div>
 
-                      <div className="">
+                      <div>
                         <h4 className="font-semibold flex mb-2 text-white">
                           Instruction Summary
                         </h4>
@@ -532,6 +556,15 @@ export default function PostGamePage() {
                           {data?.personas[selectedCharacter].instruction}
                         </p>
                       </div>
+                    </TabsContent>
+
+                    <TabsContent value="chart" className="space-y-4">
+                      <GameChart
+                        metricsEntry={data?.metrics}
+                        currentCharacterName={
+                          data?.personas[selectedCharacter].agent_name
+                        }
+                      />
                     </TabsContent>
 
                     <TabsContent value="conversations" className="space-y-4">

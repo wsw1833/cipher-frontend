@@ -41,8 +41,8 @@ const characters = [
 
 export default function PersonaCard() {
   return (
-    <div className="container mx-auto p-6">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="container mx-auto p-10">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
         {characters.map((character) => (
           <Card
             key={character.id}
@@ -53,18 +53,18 @@ export default function PersonaCard() {
                 {character.name}
               </CardTitle>
             </CardHeader>
-            <CardContent className="flex justify-center">
+            <CardContent className="flex justify-center h-[14rem] md:h-[22rem]">
               <div className="relative w-40 h-40 md:w-80 md:h-80">
                 <Image
                   src={character.image || '/placeholder.svg'}
                   alt={character.name}
                   fill
-                  className="rounded-[20px]"
+                  className="rounded-[20px] md:w-[20rem] h-[2rem] w-[18rem] h-[18rem]"
                 />
               </div>
             </CardContent>
-            <CardFooter className="w-full h-[8rem] pb-0 pt-0 bg-black/80 backdrop-blur-sm">
-              <p className="text-amber-200/80 text-sm text-center leading-relaxed">
+            <CardFooter className="w-full h-[8rem] pb-0 pt-0 bg-[#15130A] backdrop-blur-sm">
+              <p className="text-amber-200/80 text-sm text-center leading-relaxed font-medium">
                 {character.description}
               </p>
             </CardFooter>
