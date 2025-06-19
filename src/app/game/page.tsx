@@ -643,7 +643,7 @@ const GamePage = () => {
           case 'gameCheck':
             const data = await checkGameState(gameID);
             setGameState(data);
-            if (data && data.result !== null) {
+            if (data.result !== null) {
               setFinalResult(data.result);
               terminateAllConnections();
               router.push('/post-game');

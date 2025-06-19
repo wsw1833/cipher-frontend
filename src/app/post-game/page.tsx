@@ -30,6 +30,7 @@ import {
   getAgentPersonas,
   getConversationHistory,
   getKeywords,
+  getDataMetrics,
 } from '@/actions/post-game-analysis';
 import Image from 'next/image';
 import beerMug from '@images/beer-mug.svg';
@@ -37,10 +38,12 @@ import helmet from '@images/helmet.svg';
 import werewolf from '@images/werewolf.svg';
 import dead from '@images/dead.svg';
 import love from '@images/love.svg';
-import { checkGameState, getDataMetrics } from '@/actions/game-phase';
+import { checkGameState } from '@/actions/game-phase';
 import { createGame } from '@/actions/create-game';
-import GameChart, { MetricEntry } from '@/components/metricsChart';
+import GameChart, { AgentMetrics } from '@/components/metricsChart';
 import flag from '@images/flag.svg';
+import { Download } from 'lucide-react';
+import { useDataDownload } from '../hooks/use-download';
 
 interface Message {
   speaker: string;
@@ -49,7 +52,7 @@ interface Message {
   timestamp: string;
 }
 
-interface Conversation {
+export interface Conversation {
   round: number;
   phase: string;
   messages: Message[];
@@ -86,7 +89,7 @@ export interface GameData {
   personas: Persona[];
   keywords: Array<string>;
   gameStates: GameState;
-  metrics: MetricEntry[];
+  metrics: AgentMetrics[];
   agent_analyses: Summary[];
 }
 export default function PostGamePage() {
@@ -102,6 +105,17 @@ export default function PostGamePage() {
     agent_Charlie: 'charlie_icon.svg',
     agent_Dom: 'dom_icon.svg',
     agent_Elise: 'elise_icon.svg',
+  };
+
+  const { downloadData } = useDataDownload();
+
+  const handleDownload = () => {
+    downloadData(
+      data?.keywords,
+      data?.conversation,
+      data?.metrics,
+      'cipherwolves-data'
+    );
   };
 
   const getCharacterIcon = (persona: Persona | undefined) => {
@@ -308,7 +322,7 @@ export default function PostGamePage() {
     <div className="min-h-screen bg-[#15130A]">
       {/* Header */}
       <header className="bg-[#15130A] shadow-xl shadow-[#FF990050]">
-        <div className="container mx-auto px-4 py-5">
+        <div className="container mx-auto md:px-4 py-5">
           <div className="flex flex-col sm:flex-row items-center sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4 text-white">
               <Image src={beerMug} alt="logo" className="w-8 h-8" />
@@ -325,6 +339,14 @@ export default function PostGamePage() {
               </Badge>
             </div>
             <div className="flex gap-4">
+              <Button
+                variant="outline"
+                className="bg-[#ffb300] border-0 flex items-center gap-2 hover:scale-103 transition-all duration-300 transform hover:bg-[#ffb300]"
+                onClick={handleDownload}
+              >
+                <span className="hidden md:inline">Download</span>
+                <Download className="h-4 w-4 md:hidden" />
+              </Button>
               <Button
                 variant="outline"
                 className="flex items-center gap-2 shadow-[4.0px_4.0px_0.0px_rgba(0,0,0,0.38)] hover:scale-103 transition-all duration-300 transform hover:shadow-[#ffb300]"

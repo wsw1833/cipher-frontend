@@ -12,18 +12,19 @@ import {
 } from '@/components/ui/chart';
 import { PieChart, Pie, Cell } from 'recharts';
 
-// Type definitions
-export interface MetricEntry {
-  round: number;
-  phase: 'communication' | 'voting' | 'analysis';
-  metrics: {
-    analyzer: string;
-    parent_agent: string;
-    trust_level: number;
-    suspicion_level: number;
-    target: string;
-    reason: string;
+interface TrustSuspicion {
+  [agent: string]: {
+    trust_level: number | null;
+    suspicion_level: number | null;
   };
+}
+
+// Type definitions
+export interface AgentMetrics {
+  round: number;
+  phase: string;
+  analyzer: string;
+  trust_suspicion: TrustSuspicion;
 }
 
 interface ProcessedMetrics {
@@ -51,7 +52,7 @@ const characterColors = {
 };
 
 interface GameChartProps {
-  metricsEntry: MetricEntry[] | undefined;
+  metricsEntry: AgentMetrics[] | undefined;
   currentCharacterName: string | undefined;
 }
 
@@ -72,20 +73,32 @@ export default function GameChart({
     round: number,
     phase: string
   ): ProcessedMetrics => {
-    const relevantMetrics = metricsEntry?.filter(
-      (entry) =>
+    const relevantMetrics = metricsEntry?.filter((entry) => {
+      const analyzerAgent = entry.analyzer.split('_').slice(0, 2).join('_');
+      return (
         entry.round === round &&
         entry.phase === phase &&
-        entry.metrics.target === targetAgent
-    );
+        analyzerAgent !== targetAgent
+      );
+    });
 
     const suspicion_from_others: Record<string, number> = {};
     const trust_from_others: Record<string, number> = {};
 
     relevantMetrics?.forEach((entry) => {
-      const analyzer = entry.metrics.parent_agent;
-      suspicion_from_others[analyzer] = entry.metrics.suspicion_level;
-      trust_from_others[analyzer] = entry.metrics.trust_level;
+      const analyzerAgent = entry.analyzer.split('_').slice(0, 2).join('_');
+
+      const trustSuspicionData = entry.trust_suspicion[targetAgent];
+
+      if (trustSuspicionData) {
+        if (trustSuspicionData.suspicion_level !== null) {
+          suspicion_from_others[analyzerAgent] =
+            trustSuspicionData.suspicion_level;
+        }
+        if (trustSuspicionData.trust_level !== null) {
+          trust_from_others[analyzerAgent] = trustSuspicionData.trust_level;
+        }
+      }
     });
 
     return { suspicion_from_others, trust_from_others };
