@@ -15,7 +15,7 @@ import { PieChart, Pie, Cell } from 'recharts';
 // Type definitions
 export interface MetricEntry {
   round: number;
-  phase: 'communication' | 'analysis' | 'voting';
+  phase: 'communication' | 'voting' | 'analysis';
   metrics: {
     analyzer: string;
     parent_agent: string;
@@ -96,7 +96,7 @@ export default function GameChart({
   ].sort();
   const availablePhases = [
     ...new Set(metricsEntry?.map((entry) => entry.phase)),
-  ];
+  ].filter((phase) => phase !== 'analysis');
 
   const currentMetrics = processMetrics(
     currentCharacterName,

@@ -26,6 +26,7 @@ import {
 import { useRouter } from 'next/navigation';
 import PostGameSkeleton from '@/components/skeletonLoading';
 import {
+  analyzeConversation,
   getAgentPersonas,
   getConversationHistory,
   getKeywords,
@@ -39,6 +40,7 @@ import love from '@images/love.svg';
 import { checkGameState, getDataMetrics } from '@/actions/game-phase';
 import { createGame } from '@/actions/create-game';
 import GameChart, { MetricEntry } from '@/components/metricsChart';
+import flag from '@images/flag.svg';
 
 interface Message {
   speaker: string;
@@ -60,14 +62,6 @@ interface Persona {
   is_werewolf: boolean;
 }
 
-export interface GameData {
-  conversation: Conversation[];
-  personas: Persona[];
-  keywords: Array<string>;
-  gameStates: GameState;
-  metrics: MetricEntry[];
-}
-
 interface GameState {
   game_id: string;
   status: string;
@@ -79,6 +73,22 @@ interface GameState {
   result: string;
 }
 
+interface Summary {
+  agent_name: string;
+  behavior_analysis: string;
+  key_actions: string[];
+  suspicious_patterns: string[];
+  confidence_score: number;
+}
+
+export interface GameData {
+  conversation: Conversation[];
+  personas: Persona[];
+  keywords: Array<string>;
+  gameStates: GameState;
+  metrics: MetricEntry[];
+  agent_analyses: Summary[];
+}
 export default function PostGamePage() {
   const [selectedCharacter, setSelectedCharacter] = useState(0);
   const router = useRouter();
@@ -253,14 +263,21 @@ export default function PostGamePage() {
         }
 
         // Wait for all API calls to complete
-        const [conversation, personas, keywords, gameStates, metrics] =
-          await Promise.all([
-            getConversationHistory(gameID),
-            getAgentPersonas(gameID),
-            getKeywords(gameID),
-            checkGameState(gameID),
-            getDataMetrics(gameID),
-          ]);
+        const [
+          conversation,
+          personas,
+          keywords,
+          gameStates,
+          metrics,
+          agent_analyses,
+        ] = await Promise.all([
+          getConversationHistory(gameID),
+          getAgentPersonas(gameID),
+          getKeywords(gameID),
+          checkGameState(gameID),
+          getDataMetrics(gameID),
+          analyzeConversation(gameID),
+        ]);
 
         // Set all data at once
         setData({
@@ -269,7 +286,10 @@ export default function PostGamePage() {
           keywords,
           gameStates,
           metrics,
+          agent_analyses,
         });
+
+        console.log(data);
       } catch (error) {
         console.log('error fetching data from APIs', error);
       } finally {
@@ -540,12 +560,25 @@ export default function PostGamePage() {
                       </div>
 
                       <div>
-                        <h4 className="font-semibold flex mb-2 text-white">
-                          Personality Traits
+                        <h4 className="font-semibold mb-2 text-lg text-white flex flex-row items-center gap-2">
+                          <Image src={flag} alt="key" className="w-6 h-6" />
+                          Key Insights
                         </h4>
-                        <p className="text-sm text-white/70 mb-2">
-                          {data?.personas[selectedCharacter].description}
-                        </p>
+                        <ul className="space-y-1 text-white  font-medium">
+                          {data?.agent_analyses[
+                            selectedCharacter
+                          ].key_actions.map((key, index) => (
+                            <li
+                              key={index}
+                              className="flex items-start gap-2 font-medium text-md"
+                            >
+                              <span className="text-amber-500 font-extrabold">
+                                •
+                              </span>
+                              {key}
+                            </li>
+                          ))}
+                        </ul>
                       </div>
 
                       <div>
@@ -556,6 +589,30 @@ export default function PostGamePage() {
                           {data?.personas[selectedCharacter].instruction}
                         </p>
                       </div>
+                      <div>
+                        <h4 className="font-semibold flex mb-2 text-white">
+                          Behavior Analysis
+                        </h4>
+                        <p className="text-sm text-white/70 mb-2">
+                          {
+                            data?.agent_analyses[selectedCharacter]
+                              .behavior_analysis
+                          }
+                        </p>
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="conversations" className="space-y-4">
+                      <div className="flex items-center gap-2 my-4 text-white">
+                        <MessageSquare className="h-5 w-5 stroke-amber-500" />
+                        <h4 className="font-semibold">
+                          {data?.personas[selectedCharacter]?.agent_name}'s
+                          Conversation Log
+                        </h4>
+                      </div>
+                      <ScrollArea className="h-[500px]">
+                        <FilteredSelectedCharacterMessages />
+                      </ScrollArea>
                     </TabsContent>
 
                     <TabsContent value="chart" className="space-y-4">
@@ -565,19 +622,6 @@ export default function PostGamePage() {
                           data?.personas[selectedCharacter].agent_name
                         }
                       />
-                    </TabsContent>
-
-                    <TabsContent value="conversations" className="space-y-4">
-                      <div className="flex items-center gap-2 my-4 text-white">
-                        <MessageSquare className="h-5 w-5" />
-                        <h4 className="font-semibold">
-                          {data?.personas[selectedCharacter]?.agent_name}'s
-                          Conversation Log
-                        </h4>
-                      </div>
-                      <ScrollArea className="h-[500px]">
-                        <FilteredSelectedCharacterMessages />
-                      </ScrollArea>
                     </TabsContent>
                   </Tabs>
                 </CardContent>

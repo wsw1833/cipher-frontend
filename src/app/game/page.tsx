@@ -149,6 +149,7 @@ const GamePage = () => {
   const [finalResult, setFinalResult] = useState<string | null>(null);
   const [gameState, setGameState] = useState<GameData | null>(null);
   const [submitting, setSubmitting] = useState<boolean>(false);
+  const [gameRound, setGameRound] = useState(1);
   const router = useRouter();
 
   const {
@@ -636,6 +637,10 @@ const GamePage = () => {
 
           case 'voting':
             await startVoting(gameID);
+            setGameStatus('gameCheck');
+            break;
+
+          case 'gameCheck':
             const data = await checkGameState(gameID);
             setGameState(data);
             if (data && data.result !== null) {
@@ -643,9 +648,9 @@ const GamePage = () => {
               terminateAllConnections();
               router.push('/post-game');
             } else {
+              setGameRound((prev) => prev + 1);
               setGameStatus('communication');
             }
-            break;
 
           // Don't handle 'analysis' here - it needs user input
           default:
@@ -716,6 +721,15 @@ const GamePage = () => {
             {botsRef.current?.slice(0, 6).map((bot, index) => {
               const isEliminated =
                 gameState?.eliminated_agents?.includes(bot.name) || false;
+
+              const latestMessageBotName =
+                chatMessages.length > 0
+                  ? chatMessages[chatMessages.length - 1].botname.split(':')[0]
+                  : null;
+
+              // Check if this bot is the one who sent the latest message
+              const isLatestSpeaker = latestMessageBotName === bot.name;
+
               const characterImagePath = getSpriteIconPath(bot.name, index);
               return (
                 <div
@@ -767,6 +781,14 @@ const GamePage = () => {
                       ? '🚶 Moving'
                       : '⏸️ Paused'}
                   </div>
+
+                  {!isLatestSpeaker &&
+                    chatMessages.length > 0 &&
+                    !isEliminated && (
+                      <div className="text-gray-600 text-xs mt-1">
+                        🔄 Suspicion & Trust level updating...
+                      </div>
+                    )}
                 </div>
               );
             })}
@@ -879,7 +901,7 @@ const GamePage = () => {
               <div className="bg-[#2a2520] p-2 rounded">
                 <div className="font-medium text-white/70">Round</div>
                 <div className="text-xl font-bold text-amber-500">
-                  {gameState?.current_round || 0}
+                  {gameState?.current_round}
                 </div>
               </div>
               <div className="bg-[#2a2520] p-2 rounded">

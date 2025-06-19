@@ -13,6 +13,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { TrendingUp, TrendingDown, Eye } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Home,
@@ -25,6 +26,39 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import beerMug from '@images/beer-mug.svg';
+
+const SkeletonPulse = ({ className = '' }) => (
+  <div className={`animate-pulse bg-white/10 rounded ${className}`} />
+);
+
+const SkeletonButton = ({ className = '' }) => (
+  <div className={`animate-pulse bg-white/10 rounded h-9 ${className}`} />
+);
+
+const SkeletonChart = () => (
+  <div className="relative mx-auto aspect-square max-h-[300px] w-[300px] flex items-center justify-center">
+    {/* Outer circle */}
+    <div className="absolute inset-0 rounded-full border-4 border-white/10 animate-pulse" />
+    {/* Inner circle */}
+    <div className="absolute inset-[60px] rounded-full border-4 border-white/5 animate-pulse" />
+    {/* Center content */}
+    <div className="text-center">
+      <div className="animate-pulse bg-white/10 rounded h-8 w-16 mx-auto mb-1" />
+      <div className="animate-pulse bg-white/5 rounded h-3 w-20 mx-auto" />
+    </div>
+  </div>
+);
+
+const SkeletonLegend = () => (
+  <div className="grid grid-cols-2 gap-2 mt-4">
+    {[1, 2, 3, 4].map((i) => (
+      <div key={i} className="flex items-center gap-2">
+        <div className="w-3 h-3 rounded-full animate-pulse bg-white/10" />
+        <div className="animate-pulse bg-white/10 rounded h-4 w-16" />
+      </div>
+    ))}
+  </div>
+);
 
 export default function PostGameSkeleton() {
   return (
@@ -200,7 +234,7 @@ export default function PostGameSkeleton() {
                 </CardHeader>
                 <CardContent>
                   <Tabs defaultValue="personas" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 bg-white/10">
+                    <TabsList className="grid w-full grid-cols-3 bg-white/10">
                       <TabsTrigger
                         value="personas"
                         className="text-white data-[state=active]:bg-[#ffb300] data-[state=active]:text-black"
@@ -212,6 +246,12 @@ export default function PostGameSkeleton() {
                         className="text-white data-[state=active]:bg-[#ffb300] data-[state=active]:text-black"
                       >
                         Conversations
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="chart"
+                        className="text-white data-[state=active]:bg-[#ffb300] data-[state=active]:text-black"
+                      >
+                        Metrics
                       </TabsTrigger>
                     </TabsList>
 
@@ -256,6 +296,82 @@ export default function PostGameSkeleton() {
                           ))}
                         </div>
                       </ScrollArea>
+                    </TabsContent>
+
+                    <TabsContent value="chart" className="space-y-4">
+                      <div className="space-y-6">
+                        <div className="border-t border-white/10 pt-6 mt-4">
+                          {/* Header */}
+                          <h4 className="font-semibold flex items-center gap-2 mb-4 text-white">
+                            <Eye className="h-5 w-5 text-amber-500" />
+                            <SkeletonPulse className="h-6 w-48" />
+                          </h4>
+
+                          {/* Round Selection */}
+                          <div className="mb-4">
+                            <h5 className="text-white font-medium mb-3">
+                              Select Round
+                            </h5>
+                            <div className="flex gap-2">
+                              {[1, 2, 3, 4].map((i) => (
+                                <SkeletonButton key={i} className="w-20" />
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Phase Selection */}
+                          <div className="mb-6">
+                            <h5 className="text-white font-medium mb-3">
+                              Select Phase
+                            </h5>
+                            <div className="flex gap-2 flex-wrap">
+                              {[1, 2, 3].map((i) => (
+                                <SkeletonButton key={i} className="w-24" />
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Current Selection Display */}
+                          <div className="mb-6 p-4 bg-[#2a2520] rounded-lg">
+                            <div className="flex items-center justify-between">
+                              <SkeletonPulse className="h-6 w-32" />
+                              <div className="flex gap-2">
+                                <SkeletonPulse className="h-6 w-24 rounded-full" />
+                                <SkeletonPulse className="h-6 w-20 rounded-full" />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Dual Charts */}
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            {/* Suspicion Chart */}
+                            <div className="bg-[#2a2520] rounded-lg p-6">
+                              <div className="flex items-center justify-between mb-4">
+                                <h5 className="text-white font-medium flex items-center gap-2">
+                                  <TrendingDown className="h-4 w-4 text-red-500" />
+                                  Suspicion Levels
+                                </h5>
+                              </div>
+
+                              <SkeletonChart />
+                              <SkeletonLegend />
+                            </div>
+
+                            {/* Trust Chart */}
+                            <div className="bg-[#2a2520] rounded-lg p-6">
+                              <div className="flex items-center justify-between mb-4">
+                                <h5 className="text-white font-medium flex items-center gap-2">
+                                  <TrendingUp className="h-4 w-4 text-green-500" />
+                                  Trust Levels
+                                </h5>
+                              </div>
+
+                              <SkeletonChart />
+                              <SkeletonLegend />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </TabsContent>
                   </Tabs>
                 </CardContent>
