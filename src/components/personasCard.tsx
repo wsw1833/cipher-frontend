@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/card';
 import codebook from '@images/globe.svg';
 import magic from '@images/magician.png';
+import warlock from '@images/warlock.png';
 const characters = [
   {
     id: 1,
@@ -28,7 +29,7 @@ const characters = [
     name: 'Opportunist',
     description:
       'Strike from the Shadows. Swift, cunning, and always one step ahead.',
-    image: codebook,
+    image: warlock,
   },
   {
     id: 4,

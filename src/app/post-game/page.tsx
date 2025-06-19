@@ -25,6 +25,8 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import PostGameSkeleton from '@/components/skeletonLoading';
+import lightbulb from '@images/lightbulb.svg';
+import instruction from '@images/instruction.svg';
 import {
   analyzeConversation,
   getAgentPersonas,
@@ -361,7 +363,7 @@ export default function PostGamePage() {
                 onClick={() => handleRedirect('home')}
               >
                 <Home className="h-4 w-4" />
-                Return to Landing
+                Return to MainPage
               </Button>
             </div>
           </div>
@@ -586,7 +588,7 @@ export default function PostGamePage() {
                           <Image src={flag} alt="key" className="w-6 h-6" />
                           Key Insights
                         </h4>
-                        <ul className="space-y-1 text-white  font-medium">
+                        <ul className="space-y-1 text-white font-medium">
                           {data?.agent_analyses[
                             selectedCharacter
                           ].key_actions.map((key, index) => (
@@ -604,7 +606,12 @@ export default function PostGamePage() {
                       </div>
 
                       <div>
-                        <h4 className="font-semibold flex mb-2 text-white">
+                        <h4 className="flex items-center gap-2 font-semibold flex mb-2 text-white">
+                          <Image
+                            src={instruction}
+                            alt="instruction"
+                            className="w-6 h-6"
+                          />
                           Instruction Summary
                         </h4>
                         <p className="text-sm text-white/70 mb-2">
@@ -612,7 +619,12 @@ export default function PostGamePage() {
                         </p>
                       </div>
                       <div>
-                        <h4 className="font-semibold flex mb-2 text-white">
+                        <h4 className="flex item-center gap-2 font-semibold flex mb-2 text-white">
+                          <Image
+                            src={lightbulb}
+                            alt="lightbulb"
+                            className="w-6 h-6"
+                          />
                           Behavior Analysis
                         </h4>
                         <p className="text-sm text-white/70 mb-2">

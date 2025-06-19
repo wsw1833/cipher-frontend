@@ -606,6 +606,11 @@ const GamePage = () => {
       try {
         const data = await checkGameState(gameID);
         setGameState(data);
+        if (data.result !== null) {
+          setFinalResult(data.result);
+          terminateAllConnections();
+          router.push('/post-game');
+        }
       } catch (error) {
         console.error('Error updating game state:', error);
       }
@@ -615,7 +620,7 @@ const GamePage = () => {
     if (sseConnected) {
       updateGameState();
     }
-  }, [sseConnected]);
+  }, [sseConnected, gameStatus]);
 
   useEffect(() => {
     if (!sseConnected && connectionStatus !== 'connected') {
@@ -637,20 +642,8 @@ const GamePage = () => {
 
           case 'voting':
             await startVoting(gameID);
-            setGameStatus('gameCheck');
+            setGameRound((prev) => prev + 1);
             break;
-
-          case 'gameCheck':
-            const data = await checkGameState(gameID);
-            setGameState(data);
-            if (data.result !== null) {
-              setFinalResult(data.result);
-              terminateAllConnections();
-              router.push('/post-game');
-            } else {
-              setGameRound((prev) => prev + 1);
-              setGameStatus('communication');
-            }
 
           // Don't handle 'analysis' here - it needs user input
           default:
@@ -901,7 +894,7 @@ const GamePage = () => {
               <div className="bg-[#2a2520] p-2 rounded">
                 <div className="font-medium text-white/70">Round</div>
                 <div className="text-xl font-bold text-amber-500">
-                  {gameState?.current_round}
+                  {gameState?.current_round || gameRound}
                 </div>
               </div>
               <div className="bg-[#2a2520] p-2 rounded">
