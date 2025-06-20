@@ -25,7 +25,7 @@ import {
   Hash,
 } from 'lucide-react';
 import Image from 'next/image';
-import beerMug from '@images/beer-mug.svg';
+import cipher from '@images/cipher-logo2.svg';
 
 const SkeletonPulse = ({ className = '' }) => (
   <div className={`animate-pulse bg-white/10 rounded ${className}`} />
@@ -71,7 +71,7 @@ export default function PostGameSkeleton() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4 text-white">
-              <Image src={beerMug} alt="logo" className="w-8 h-8" />
+              <Image src={cipher} alt="logo" className="w-10 h-10" />
 
               <h1 className="text-2xl font-bold">CipherWolves</h1>
               <h1 className="text-xl font-bold">Post-Game Analysis</h1>

@@ -24,6 +24,7 @@ import {
   startVoting,
 } from '@/actions/game-phase';
 import beerMug from '@images/beer-mug.svg';
+import cipher from '@images/cipher-logo2.svg';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
@@ -670,7 +671,7 @@ const GamePage = () => {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-2">
             <div className="flex items-center gap-4">
               <h1 className="flex flex-row text-2xl md:text-3xl font-bold gap-2 items-center">
-                <NextImage src={beerMug} alt="icon" className="w-10 h-10" />
+                <NextImage src={cipher} alt="icon" className="w-10 h-10" />
                 CipherWolves
               </h1>
             </div>

@@ -9,6 +9,9 @@ import {
 import codebook from '@images/globe.svg';
 import magic from '@images/magician.png';
 import warlock from '@images/warlock.png';
+import warrior from '@images/warrior.png';
+import archer from '@images/archer.png';
+
 const characters = [
   {
     id: 1,
@@ -22,7 +25,7 @@ const characters = [
     name: 'Analyst',
     description:
       'Embrace Raw Strength. Lead the charge and conquer with sheer power.',
-    image: codebook,
+    image: warrior,
   },
   {
     id: 3,
@@ -36,7 +39,7 @@ const characters = [
     name: 'Loyalist',
     description:
       'Sharpshooter Extraordinaire. Precision and agility, from a distance.',
-    image: codebook,
+    image: archer,
   },
 ];
 

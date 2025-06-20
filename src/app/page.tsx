@@ -6,7 +6,7 @@ import Sword from '@images/sword.svg';
 import Torch from '@images/torch.png';
 import Key from '@images/medieval-key.svg';
 import PersonaCard from '@/components/personasCard';
-import emotional from '@images/emotional.png';
+import cipher from '@images/cipher-logo2.svg';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { createGame } from '@/actions/create-game';
@@ -46,10 +46,10 @@ export default function Home() {
 
         <div className="relative z-10 h-full flex flex-col items-center justify-center gap-4">
           <div className="text-center space-y-8 relative z-10">
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white line-clamp-2 md:w-[55rem] h-[7rem]">
+            <h1 className="text-3xl md:text-4xl lg:text-6xl font-bold text-white line-clamp-2 md:w-[55rem] h-[10rem]">
               Decode Alliances, Outsmart Deception, Emerge Victorious
             </h1>
-            <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-white">
+            <h2 className="text-xl md:text-2xl lg:text-4xl font-bold text-white flex items-center justify-center">
               CipherWolves
             </h2>
           </div>
@@ -140,7 +140,9 @@ export default function Home() {
         </div>
       </section>
       <section className="relative w-screen h-[7rem] bg-[#262012] brightness-[0.8] overflow-hidden flex items-center justify-center">
-        <span className="text-white font-bold text-3xl">CipherWolves</span>
+        <span className="text-white font-bold text-3xl flex items-center gap-2">
+          CipherWolves <Image src={cipher} alt="logo" className="w-12 h-12" />
+        </span>
       </section>
     </main>
   );

@@ -35,7 +35,7 @@ import {
   getDataMetrics,
 } from '@/actions/post-game-analysis';
 import Image from 'next/image';
-import beerMug from '@images/beer-mug.svg';
+import cipher from '@images/cipher-logo2.svg';
 import helmet from '@images/helmet.svg';
 import werewolf from '@images/werewolf.svg';
 import dead from '@images/dead.svg';
@@ -327,7 +327,7 @@ export default function PostGamePage() {
         <div className="container mx-auto md:px-4 py-5">
           <div className="flex flex-col sm:flex-row items-center sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4 text-white">
-              <Image src={beerMug} alt="logo" className="w-8 h-8" />
+              <Image src={cipher} alt="logo" className="w-10 h-10" />
               <h1 className="text-2xl font-bold md:display hidden">
                 CipherWolves
               </h1>
