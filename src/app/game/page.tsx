@@ -895,7 +895,7 @@ const GamePage = () => {
               <div className="bg-[#2a2520] p-2 rounded">
                 <div className="font-medium text-white/70">Round</div>
                 <div className="text-xl font-bold text-amber-500">
-                  {gameState?.current_round || gameRound}
+                  {gameRound}
                 </div>
               </div>
               <div className="bg-[#2a2520] p-2 rounded">
